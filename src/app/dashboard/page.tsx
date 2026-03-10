@@ -2,8 +2,9 @@
 
 import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
-import { Shield, ArrowUpRight, BarChart3, Database, CheckCircle2, AlertCircle, ExternalLink, Award } from "lucide-react";
+import { Shield, ArrowUpRight, BarChart3, Database, CheckCircle2, AlertCircle, ExternalLink, Award, Globe, Zap, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/Button";
+import { useState, useEffect } from "react";
 
 const StatCard = ({ label, value, icon: Icon, trend }: any) => (
   <div className="bg-surface border border-border-subtle p-6 rounded-3xl shadow-soft-float">
@@ -109,25 +110,34 @@ export default function DashboardPage() {
             </section>
 
             <section className="bg-surface border border-border-subtle rounded-3xl p-8 shadow-soft-float">
-               <h2 className="card-h3 mb-6">Article 6 Traceability Logs</h2>
+               <div className="flex justify-between items-center mb-8">
+                  <h2 className="card-h3 m-0 flex items-center gap-3">
+                    <Globe className="text-brand" size={20} /> CAD Trust Metadata Harmony
+                  </h2>
+                  <Button variant="secondary" className="px-3 py-1.5 text-[9px] uppercase tracking-widest flex gap-2 items-center">
+                    <RefreshCcw size={12} /> Sync Global State
+                  </Button>
+               </div>
                <div className="text-sm text-muted-text">
-                  <div className="py-4 border-b border-border-subtle flex justify-between group hover:bg-background/20 transition-colors px-4 rounded-xl">
+                  <div className="py-4 border-b border-border-subtle flex justify-between group hover:bg-secondary-bg/10 transition-colors px-4 rounded-xl">
                     <div className="flex flex-col">
                        <span className="font-bold text-accent">Authorized ITMO Transfer</span>
                        <span className="text-[11px]">BHU-Singapore Bilateral Agreement Fulfillment</span>
                     </div>
-                    <span className="text-tertiary-text font-mono text-xs mt-2 self-start flex items-center gap-2">
-                       7m ago <ExternalLink size={12} />
-                    </span>
+                    <div className="text-right">
+                       <span className="bg-success/10 text-success text-[9px] font-bold px-2 py-0.5 rounded-sm block mb-1">GIN: BT-4220-X</span>
+                       <span className="text-tertiary-text font-mono text-[10px]">Harmonized 7m ago</span>
+                    </div>
                   </div>
-                  <div className="py-4 border-b border-border-subtle flex justify-between group hover:bg-background/20 transition-colors px-4 rounded-xl">
+                  <div className="py-4 border-b border-border-subtle flex justify-between group hover:bg-secondary-bg/10 transition-colors px-4 rounded-xl">
                     <div className="flex flex-col">
                        <span className="font-bold text-accent">CAD Trust Lifecycle Sync</span>
                        <span className="text-[11px]">Vintage BHU-RE-2023 metadata updated globally</span>
                     </div>
-                    <span className="text-tertiary-text font-mono text-xs mt-2 self-start flex items-center gap-2">
-                       2h ago <ExternalLink size={12} />
-                    </span>
+                    <div className="text-right">
+                       <span className="bg-success/10 text-success text-[9px] font-bold px-2 py-0.5 rounded-sm block mb-1">GIN: BT-8891-Y</span>
+                       <span className="text-tertiary-text font-mono text-[10px]">Harmonized 2h ago</span>
+                    </div>
                   </div>
                </div>
             </section>
@@ -136,52 +146,53 @@ export default function DashboardPage() {
           {/* Sidebar Panel */}
           <div className="space-y-8">
             <section className="bg-accent text-white rounded-[40px] p-10 shadow-hover-lift relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-brand/20 blur-3xl rounded-full -z-10" />
               <div className="relative z-10">
-                 <h2 className="text-2xl font-bold mb-4">Sovereign Market Actions</h2>
+                 <h2 className="text-2xl font-bold mb-4">Market Liquidity</h2>
                  <p className="text-gray-400 text-sm mb-10 leading-relaxed">
-                   Interact directly with the sovereign registry infrastructure through high-integrity market tools.
+                   Manage your position in authorized carbon pools. Direct integration with Uniswap V3 for seamless exit and entry.
                  </p>
                  <div className="space-y-4">
                     <Button 
-                       href="/marketplace"
+                       href="/marketplace?view=pools"
                        className="w-full bg-brand text-white border-0 hover:bg-brand/90 flex items-center justify-center gap-2 py-5"
                     >
-                       Start Trading Credits <ArrowUpRight size={18} />
+                       Access Carbon Pools <Zap size={18} />
                     </Button>
-                    <Button 
-                       variant="secondary" 
-                       className="w-full border-white/20 text-white flex items-center justify-center gap-2"
-                       onClick={() => alert("Minting interface is currently in verification. Please contact the National Registry office for issuance authorizations.")}
-                    >
-                       Mint Tokenized Vintage <Shield size={16} />
-                    </Button>
-                    <Button 
-                       className="w-full bg-success text-white border-0 hover:bg-success/90 flex items-center justify-center gap-2"
-                       href="/retire"
-                    >
-                       Retire & Claim Impact <Award size={16} />
-                    </Button>
+                    <div className="grid grid-cols-2 gap-3">
+                       <Button variant="secondary" className="border-white/20 text-white flex items-center justify-center gap-2 py-4">
+                          Swap <RefreshCcw size={16} />
+                       </Button>
+                       <Button variant="secondary" className="border-white/20 text-white flex items-center justify-center gap-2 py-4">
+                          Pool <Database size={16} />
+                       </Button>
+                    </div>
                  </div>
               </div>
             </section>
 
-            <section className="bg-white border border-border-subtle rounded-3xl p-8">
-              <h2 className="card-h3 mb-4">Article 6.2 Alignment</h2>
-              <div className="p-4 bg-brand-soft rounded-2xl mb-4">
-                <p className="text-brand text-xs font-bold leading-normal">
-                  "Ensure no double counting through Corresponding Adjustments (CA) as per national guidelines."
-                </p>
+            <section className="bg-surface border border-border-subtle rounded-3xl p-8">
+              <div className="flex justify-between items-center mb-6">
+                 <h2 className="card-h3 m-0">Institutional Trust</h2>
+                 <span className="text-[9px] font-bold text-brand uppercase tracking-widest border border-brand/20 px-2 py-1 rounded-full">Article 6.2</span>
               </div>
-              <ul className="text-xs space-y-3 text-muted-text">
-                <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-brand mt-1" />
-                  Real-time synchronization with CAD Trust metadata.
-                </li>
-                <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-brand mt-1" />
-                  Sovereign-level control for ITMO/Article 6 status.
-                </li>
-              </ul>
+              <div className="space-y-4">
+                <div className="p-4 bg-brand-soft rounded-2xl">
+                  <p className="text-brand text-[10px] font-bold leading-normal">
+                    Corresponding Adjustments (CA) status: <strong>SECURED</strong> per National Registry Protocol 4.2.
+                  </p>
+                </div>
+                <ul className="text-[11px] space-y-4 text-muted-text">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 size={14} className="text-success mt-0.5 flex-shrink-0" />
+                    Bhutan-Singapore Bilateral Compliance Verified.
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 size={14} className="text-success mt-0.5 flex-shrink-0" />
+                    Double Counting Prevention (CAD Trust) Active.
+                  </li>
+                </ul>
+              </div>
             </section>
           </div>
         </div>

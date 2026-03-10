@@ -5,28 +5,74 @@ import { Footer } from "@/components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, CheckCircle2, CloudFog, Award, ArrowRight, Download, History, ExternalLink, Info } from "lucide-react";
 import { Button } from "@/components/Button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { REGISTRY_ADDRESS, REGISTRY_ABI } from "@/constants";
+import type { ImpactCertificate } from "@/lib/certificates";
 
 const mockHoldings = [
-  { id: "BHU-RE-2023-001", name: "Wangdue Hydropower", amount: 500 },
-  { id: "BHU-FOR-2023-009", name: "Gelephu Forestation", amount: 1250 },
-  { id: "BHU-RE-2022-012", name: "Trongsa Biomass", amount: 215 },
+  { id: 1, projectId: "BHU-RE-2023-001", name: "Wangdue Hydropower", amount: 500 },
+  { id: 2, projectId: "BHU-FOR-2023-009", name: "Gelephu Forestation", amount: 1250 },
+  { id: 3, projectId: "BHU-RE-2022-012", name: "Trongsa Biomass", amount: 215 },
 ];
 
 export default function RetirementPage() {
+  const { address } = useAccount();
   const [selectedHolding, setSelectedHolding] = useState(mockHoldings[0]);
   const [retireAmount, setRetireAmount] = useState("");
+  const [retireBeneficiary, setRetireBeneficiary] = useState("");
   const [retireReason, setRetireReason] = useState("");
-  const [isRetiring, setIsRetiring] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [certificate, setCertificate] = useState<ImpactCertificate | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const { data: hash, writeContract, isPending: isRetiring } = useWriteContract();
+
+  const { isLoading: isWaiting, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({
+    hash,
+  });
 
   const handleRetire = async () => {
     if (!retireAmount || isNaN(Number(retireAmount))) return;
-    setIsRetiring(true);
-    // Simulate smart contract interaction and CAD Trust sync
-    await new Promise((resolve) => setTimeout(resolve, 2500));
-    setIsRetiring(false);
-    setIsSuccess(true);
+    
+    writeContract({
+      address: REGISTRY_ADDRESS as `0x${string}`,
+      abi: REGISTRY_ABI,
+      functionName: "retire",
+      args: [
+        BigInt(selectedHolding.id),
+        BigInt(retireAmount),
+        retireBeneficiary || "Himalaya Carbon User",
+        retireReason || "Voluntary Retirement",
+      ],
+    });
+  };
+
+  // Phase 2: Secure Bridge Verification & Certificate Issuance
+  useEffect(() => {
+    if (isTxSuccess && hash) {
+      setIsSuccess(true);
+      verifyRetirement(hash);
+    }
+  }, [isTxSuccess, hash]);
+
+  const verifyRetirement = async (txHash: string) => {
+    setIsVerifying(true);
+    try {
+      const response = await fetch("/api/retire/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ txHash }),
+      });
+      const data = await response.json();
+      if (data.certificate) {
+        setCertificate(data.certificate);
+      }
+    } catch (err) {
+      console.error("Verification failed", err);
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   return (
@@ -64,7 +110,7 @@ export default function RetirementPage() {
                     >
                       <div className="flex justify-between items-center mb-1">
                         <span className="font-bold text-sm">{holding.name}</span>
-                        <span className="text-[10px] font-bold uppercase text-tertiary-text">{holding.id}</span>
+                        <span className="text-[10px] font-bold uppercase text-tertiary-text">{holding.projectId}</span>
                       </div>
                       <p className="text-sm font-medium text-brand">Available: {holding.amount} HCR</p>
                     </button>
@@ -87,9 +133,21 @@ export default function RetirementPage() {
                     />
                   </div>
                   <div>
+                    <label className="label-meta text-xs block mb-2 uppercase font-bold tracking-wider">Beneficiary Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Apple Inc., or Personal Use..."
+                      value={retireBeneficiary}
+                      onChange={(e) => setRetireBeneficiary(e.target.value)}
+                      className="w-full px-6 py-4 bg-background border border-border-subtle rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all text-sm mb-4"
+                    />
+                  </div>
+                  <div>
                     <label className="label-meta text-xs block mb-2 uppercase font-bold tracking-wider">Reason for Retirement (Optional)</label>
                     <textarea
                       placeholder="e.g., Corporate CSR 2024..."
+                      value={retireReason}
+                      onChange={(e) => setRetireReason(e.target.value)}
                       className="w-full px-6 py-4 bg-background border border-border-subtle rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all text-sm h-32"
                     />
                   </div>
@@ -182,65 +240,75 @@ export default function RetirementPage() {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="max-w-3xl mx-auto text-center py-20"
+              className="max-w-4xl mx-auto space-y-12 py-20"
             >
-              <div className="inline-flex items-center justify-center p-6 bg-success/10 text-success rounded-full mb-10 shadow-sm border border-success/20">
-                <Award size={64} className="animate-bounce" />
-              </div>
-              <h1 className="display-h1 mb-6">Retirement Confirmed!</h1>
-              <p className="body-primary max-w-xl mx-auto mb-12">
-                Your units have been permanently retired from the world's first net-negative sovereign registry. You are now authorized to claim their climate impact.
-              </p>
+              <div className="bg-success/5 border border-success/20 p-12 rounded-[48px] text-center shadow-lg backdrop-blur-sm relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-success/50 to-brand/50" />
+                <div className="inline-flex items-center justify-center p-6 bg-success/10 text-success rounded-full mb-10 shadow-sm border border-success/20">
+                  <Award size={64} className="animate-pulse" />
+                </div>
+                <h1 className="display-h1 mb-6 text-accent">Sovereign Proof of Impact</h1>
+                <p className="body-primary max-w-2xl mx-auto mb-12">
+                  Your units have been permanently retired from <strong>Bhutan's National Carbon Registry</strong>. This action is irreversible, synchronized with the global CAD Trust, and legally authorized for climate claims.
+                </p>
 
-              <div className="bg-white border border-border-subtle rounded-[40px] p-12 mb-12 shadow-hover-lift relative overflow-hidden group">
-                 {/* Certificate Background watermark */}
-                 <div className="absolute inset-0 opacity-[0.03] select-none pointer-events-none flex items-center justify-center">
-                    <Award size={400} className="text-accent" />
-                 </div>
-                 
-                 <div className="relative z-10 flex flex-col items-center">
-                   <div className="flex items-center gap-3 mb-8">
-                      <Shield className="text-brand" size={32} />
-                      <span className="text-xl font-bold tracking-tight text-accent">Himalaya Sovereign Impact</span>
-                   </div>
-                   <div className="w-full h-px bg-border-subtle mb-10" />
-                   
-                   <p className="label-meta mb-10 uppercase tracking-[0.2em] text-brand">Certificate of Climate contribution</p>
-                   <h2 className="text-3xl font-bold mb-6 text-accent">OFFICIAL REGISTRY PROOF № BHU-HCR-2024-00431</h2>
-                   
-                   <p className="text-xl font-medium text-muted-text mb-12 italic leading-relaxed">
-                     "Certified by the National Carbon Registry of Bhutan that <strong>{retireAmount} tCO2e</strong> have been permanently retired from <strong>{selectedHolding.name}</strong> vintage 2023."
-                   </p>
-                   
-                   <div className="grid grid-cols-2 gap-12 w-full max-w-lg mb-12">
-                      <div className="text-left">
-                         <p className="label-meta text-[10px] mb-1">Impact Origin</p>
-                         <p className="font-bold text-sm">Bhutan Nature Sinks</p>
-                      </div>
-                      <div className="text-right">
-                         <p className="label-meta text-[10px] mb-1">CAD Trust Sync ID</p>
-                         <p className="font-bold text-sm truncate">BHU-P-022::{selectedHolding.id.split('-').pop()}</p>
-                      </div>
-                   </div>
-                   
-                   <div className="flex gap-4">
-                      <Button variant="secondary" className="flex items-center gap-2 border-border-subtle bg-white hover:bg-gray-50">
-                         <Download size={18} /> Download Certificate
-                      </Button>
-                      <Button className="flex items-center gap-2">
-                         <ExternalLink size={18} /> View on Registry Explorer
-                      </Button>
-                   </div>
-                 </div>
+                <div className="flex flex-wrap justify-center gap-6">
+                  <Button className="px-10 py-5 bg-accent text-white rounded-2xl flex items-center gap-2 shadow-hover-lift">
+                    <Download size={20} /> Download Sovereign Certificate
+                  </Button>
+                  <Button variant="secondary" className="px-10 py-5 rounded-2xl border border-border-subtle bg-white hover:bg-gray-50">
+                    <ExternalLink size={20} /> View on Registry Explorer
+                  </Button>
+                </div>
               </div>
 
-              <div className="flex justify-center gap-8">
-                 <button onClick={() => setIsSuccess(false)} className="text-brand font-bold text-sm hover:underline flex items-center gap-2">
-                   <History size={16} /> Retire more units
-                 </button>
-                 <a href="/dashboard" className="text-muted-text font-medium text-sm hover:text-foreground">
-                   Return to Dashboard
-                 </a>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="bg-white border border-border-subtle p-10 rounded-[40px] shadow-soft-float group hover:border-brand/40 transition-all">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-muted-text mb-8 flex items-center gap-2">
+                    <Shield size={18} className="text-brand" /> Registry Sync Proof
+                  </h3>
+                  <ul className="space-y-6">
+                    {[
+                      { label: "Registry Source", val: "National Carbon Registry Council (NCRC)" },
+                      { label: "Unit Status", val: isVerifying ? "Verifying..." : "Cancelled / Retired", color: "text-success" },
+                      { label: "Batch Serial", val: `NR-BT-2023-${selectedHolding.projectId.split('-').pop()}` },
+                      { label: "Sync ID", val: certificate?.cadSyncId || "Pending Sync..." }
+                    ].map((item, i) => (
+                      <li key={i} className="flex justify-between items-center text-sm">
+                        <span className="text-muted-text">{item.label}</span>
+                        <span className={`font-mono font-bold ${item.color || 'text-accent'}`}>{item.val}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="bg-white border border-border-subtle p-10 rounded-[40px] shadow-soft-float group hover:border-brand/40 transition-all">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-muted-text mb-8 flex items-center gap-2">
+                    <History size={18} className="text-brand" /> Blockchain Audit Trail
+                  </h3>
+                  <ul className="space-y-6">
+                    {[
+                      { label: "Transaction Hash", val: hash ? `${hash.slice(0, 6)}...${hash.slice(-4)}` : "Pending..." },
+                      { label: "Action Type", val: "Token Burn (ERC-1155)" },
+                      { label: "Amount Retired", val: `${retireAmount} tCO2e` },
+                      { label: "Consensus Status", val: isTxSuccess ? "Finalized" : "Confirming...", color: "text-success" }
+                    ].map((item, i) => (
+                      <li key={i} className="flex justify-between items-center text-sm">
+                        <span className="text-muted-text">{item.label}</span>
+                        <span className={`font-mono font-bold ${item.color || 'text-accent'}`}>{item.val}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex justify-center gap-12 pt-6">
+                <button onClick={() => setIsSuccess(false)} className="group flex items-center gap-2 text-brand font-bold text-sm tracking-tight transition-all hover:gap-4">
+                  <History size={18} /> Retire more units
+                </button>
+                <a href="/dashboard" className="text-muted-text font-medium text-sm hover:text-accent transition-colors">
+                  Return to Dashboard
+                </a>
               </div>
             </motion.div>
           </AnimatePresence>

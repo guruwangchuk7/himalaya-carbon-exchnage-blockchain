@@ -5,52 +5,111 @@ import { motion } from "framer-motion";
 import { Search, Filter, ArrowUpDown, Shield, Info, ExternalLink, BarChart3 } from "lucide-react";
 import { Button } from "@/components/Button";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { MessageSquare, Zap, Globe, Clock, CheckCircle2 } from "lucide-react";
 
-const projects = [
+const projectPools = [
   {
-    id: "BHU-RE-2023-001",
-    name: "Wangdue Hydropower Offset",
-    vintage: 2023,
-    methodology: "Renewable Energy (ACM0002)",
-    authorized: true,
-    available: "15,420 tCO2e",
-    price: "$18.50",
-    image: "/images/project-hydro.png",
+    id: "BHU-NATURE-POOL",
+    name: "Bhutan Nature-Based Composite",
+    symbol: "BNC",
+    vintages: "2023 - 2024",
+    liquidity: "$4.8M",
+    volume: "12,500 t/day",
+    tokens: "ERC-20 (Uniswap Ready)"
   },
   {
-    id: "BHU-BIO-2024-004",
-    name: "Phobjikha Conservation Project",
-    vintage: 2024,
-    methodology: "Avoidance/Removal (Nature-Based)",
-    authorized: false,
-    available: "120,000 tCO2e",
-    price: "$24.00",
-    image: "/images/project-forest.png",
-  },
-  {
-    id: "BHU-FOR-2023-009",
-    name: "Gelephu Forestation Initiative",
-    vintage: 2023,
-    methodology: "Reforestation (AR-ACM0003)",
-    authorized: true,
-    available: "45,000 tCO2e",
-    price: "$22.50",
-    image: "/images/project-forest.png",
-  },
-  {
-    id: "BHU-RE-2022-012",
-    name: "Trongsa Biomass Energy",
-    vintage: 2022,
-    methodology: "Methane Avoidance",
-    authorized: true,
-    available: "8,500 tCO2e",
-    price: "$16.75",
-    image: "/images/project-hydro.png",
-  },
+    id: "BHU-RE-POOL",
+    name: "Sovereign Hydro & Biomass",
+    symbol: "BHR",
+    vintages: "2022 - 2024",
+    liquidity: "$2.1M",
+    volume: "5,200 t/day",
+    tokens: "ERC-20 (Uniswap Ready)"
+  }
 ];
 
-const ProjectCard = ({ project }: { project: typeof projects[0] }) => (
+const RFQModal = ({ isOpen, onClose, project }: any) => {
+  const [amount, setAmount] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/market/rfq", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buyer: "Institutional Participant",
+          projectId: project.id,
+          amount: amount,
+          purpose: "Sovereign Retirement / Secondary Market Seed"
+        }),
+      });
+      const data = await res.json();
+      if (data.rfqId) setSuccess(true);
+    } catch (e) {
+      alert("RFQ submission failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-md bg-accent/20">
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-surface border border-border-subtle p-10 rounded-[48px] shadow-2xl max-w-lg w-full relative overflow-hidden"
+      >
+        {!success ? (
+          <>
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-3">
+              <MessageSquare className="text-brand" /> Institutional RFQ
+            </h2>
+            <p className="text-sm text-muted-text mb-8">
+              Request a custom quote for high-volume acquisition of <strong>{project.name}</strong>. Sovereign brokers provide tiered pricing for orders above 10,000 tCO2e.
+            </p>
+            <div className="space-y-6">
+               <div>
+                  <label className="label-meta text-[10px] uppercase block mb-2">Requested Volume (tCO2e)</label>
+                  <input 
+                    type="number" 
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="Min 10,000" 
+                    className="w-full bg-background border border-border-subtle rounded-2xl px-6 py-4 text-xl font-bold"
+                  />
+               </div>
+               <Button 
+                onClick={handleSubmit} 
+                disabled={isSubmitting || !amount}
+                className="w-full py-5 bg-brand text-white flex items-center justify-center gap-2"
+               >
+                 {isSubmitting ? "Submitting Request..." : "Submit Quote Request"} <Zap size={18} />
+               </Button>
+               <button onClick={onClose} className="w-full text-xs text-muted-text font-bold hover:text-accent transition-colors">Cancel Request</button>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-10">
+             <div className="inline-flex items-center justify-center p-6 bg-success/10 text-success rounded-full mb-8">
+                <CheckCircle2 size={48} />
+             </div>
+             <h2 className="text-2xl font-bold mb-4 text-accent">RFQ Submitted</h2>
+             <p className="text-sm text-muted-text mb-10">Your institutional request has been logged. A sovereign broker will contact you via your registered portal.</p>
+             <Button onClick={onClose} className="w-full py-4 bg-accent text-white rounded-2xl">Close Portal</Button>
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+};
+
+const ProjectCard = ({ project, onRFQ }: { project: any, onRFQ: any }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
@@ -59,12 +118,10 @@ const ProjectCard = ({ project }: { project: typeof projects[0] }) => (
     className="bg-surface border border-border-subtle rounded-3xl overflow-hidden shadow-soft-float hover:shadow-hover-lift transition-all group"
   >
     <div className="aspect-video relative overflow-hidden">
-      <div className="absolute inset-0 bg-gray-200 animate-pulse" />
-      {/* Fallback image if paths are still being fixed */}
       <div className="absolute inset-0 bg-brand/10 group-hover:bg-brand/20 transition-colors" />
       <div className="absolute top-4 left-4 flex gap-2">
          {project.authorized && (
-            <span className="flex items-center gap-1 bg-success/10 text-success text-[10px] font-bold px-2 py-1 rounded-full backdrop-blur-md">
+            <span className="flex items-center gap-1 bg-success/10 text-success text-[10px] font-bold px-2 py-1 rounded-full backdrop-blur-md border border-success/20">
                <Shield size={12} /> Article 6.2
             </span>
          )}
@@ -75,31 +132,39 @@ const ProjectCard = ({ project }: { project: typeof projects[0] }) => (
     </div>
     
     <div className="p-6">
-      <p className="label-meta mb-1 uppercase tracking-wider">{project.id}</p>
-      <h3 className="card-h3 mb-2 group-hover:text-brand transition-colors">{project.name}</h3>
-      <p className="text-sm text-muted-text mb-6 line-clamp-1">{project.methodology}</p>
+      <div className="flex justify-between items-start mb-1">
+         <p className="label-meta uppercase tracking-wider">{project.id}</p>
+         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm border ${project.riskScore?.startsWith('A') ? 'text-success border-success/20' : 'text-brand border-brand/20'}`}>
+            Risk: {project.riskScore}
+         </span>
+      </div>
+      <h3 className="card-h3 mb-2 group-hover:text-brand transition-colors line-clamp-1">{project.name}</h3>
+      <p className="text-xs text-muted-text mb-6 line-clamp-1">{project.methodology}</p>
       
-      <div className="flex justify-between items-end">
+      <div className="flex justify-between items-end mb-6">
         <div>
-          <p className="label-meta text-[11px] mb-1">Available Volume</p>
-          <p className="font-bold text-foreground">{project.available}</p>
+          <p className="label-meta text-[11px] mb-1 uppercase tracking-tighter">Available</p>
+          <p className="font-bold text-accent">{project.available}</p>
         </div>
         <div className="text-right">
-          <p className="label-meta text-[11px] mb-1">Price / Ton</p>
-          <p className="text-2xl font-bold text-brand">{project.price}</p>
+          <p className="label-meta text-[11px] mb-1 uppercase tracking-tighter">Price</p>
+          <p className="text-xl font-bold text-brand">{project.price}</p>
         </div>
       </div>
       
-      <div className="mt-6 pt-6 border-t border-border-subtle flex gap-3">
-        <Button href={`/projects/${project.id}`} variant="secondary" className="flex-1 py-3 text-xs">
-          View Details
-        </Button>
+      <div className="pt-6 border-t border-border-subtle flex flex-col gap-3">
         <Button 
-          className="flex-1 py-3 text-xs"
-          onClick={() => alert(`Initiating acquisition of ${project.available} HCR from ${project.id}. Please connect your authorized registry wallet.`)}
+          className="w-full py-4 text-xs flex items-center justify-center gap-2"
+          onClick={() => alert(`Initiating acquisition workflow for ${project.id}. Institutional verification required.`)}
         >
-          Buy Now
+          Acquire Instant <Zap size={14} />
         </Button>
+        <button 
+          onClick={onRFQ}
+          className="w-full py-4 text-[10px] font-bold uppercase tracking-widest text-muted-text hover:text-brand flex items-center justify-center gap-2 transition-colors border border-dashed border-border-subtle rounded-2xl"
+        >
+          Institutional RFQ <MessageSquare size={14} />
+        </button>
       </div>
     </div>
   </motion.div>
@@ -107,6 +172,58 @@ const ProjectCard = ({ project }: { project: typeof projects[0] }) => (
 
 export default function MarketplacePage() {
   const [filter, setFilter] = useState("All");
+  const [rfqProject, setRfqProject] = useState<any>(null);
+
+  const projects = [
+    {
+      id: "BHU-RE-2023-001",
+      name: "Wangdue Hydropower Offset",
+      vintage: 2023,
+      methodology: "Renewable Energy (ACM0002)",
+      authorized: true,
+      available: "15,420 tCO2e",
+      price: "$18.50",
+      image: "/images/project-hydro.png",
+      riskScore: "A+",
+      coBenefits: ["SDG 7", "SDG 13", "SDG 17"]
+    },
+    {
+      id: "BHU-BIO-2024-004",
+      name: "Phobjikha Conservation Project",
+      vintage: 2024,
+      methodology: "Avoidance/Removal (Nature-Based)",
+      authorized: false,
+      available: "120,000 tCO2e",
+      price: "$24.00",
+      image: "/images/project-forest.png",
+      riskScore: "A",
+      coBenefits: ["SDG 15", "SDG 8", "SDG 1"]
+    },
+    {
+      id: "BHU-FOR-2023-009",
+      name: "Gelephu Forestation Initiative",
+      vintage: 2023,
+      methodology: "Reforestation (AR-ACM0003)",
+      authorized: true,
+      available: "45,000 tCO2e",
+      price: "$22.50",
+      image: "/images/project-forest.png",
+      riskScore: "A+",
+      coBenefits: ["SDG 13", "SDG 15", "SDG 6"]
+    },
+    {
+      id: "BHU-RE-2022-012",
+      name: "Trongsa Biomass Energy",
+      vintage: 2022,
+      methodology: "Methane Avoidance",
+      authorized: true,
+      available: "8,500 tCO2e",
+      price: "$16.75",
+      image: "/images/project-hydro.png",
+      riskScore: "B+",
+      coBenefits: ["SDG 7", "SDG 9"]
+    },
+  ];
 
   return (
     <main className="min-h-screen bg-background">
@@ -200,16 +317,85 @@ export default function MarketplacePage() {
         </div>
       </section>
 
-      {/* Grid of Carbon Credits */}
-      <section className="py-20">
+      {/* Market Segments */}
+      <section className="pb-24">
         <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
+           <div className="flex gap-4 mb-12 overflow-x-auto pb-4 scrollbar-hide">
+              <button 
+                onClick={() => setFilter("All")}
+                className={`px-8 py-3 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${filter === 'All' ? 'bg-accent text-white border-accent' : 'bg-white text-muted-text border-border-subtle'}`}
+              >
+                Individual Vintages
+              </button>
+              <button 
+                onClick={() => setFilter("Pools")}
+                className={`px-8 py-3 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${filter === 'Pools' ? 'bg-accent text-white border-accent' : 'bg-white text-muted-text border-border-subtle'}`}
+              >
+                ERC-20 Carbon Pools
+              </button>
+              <button className="px-8 py-3 rounded-2xl text-xs font-bold whitespace-nowrap border border-border-subtle text-muted-text opacity-50 cursor-not-allowed">
+                Forward Contracts (Q4)
+              </button>
+           </div>
+
+           {filter === "Pools" ? (
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {projectPools.map((pool) => (
+                  <div key={pool.id} className="bg-surface border border-border-subtle p-10 rounded-[40px] shadow-soft-float relative overflow-hidden group hover:border-brand/40 transition-all">
+                     <div className="flex justify-between items-start mb-8">
+                        <div>
+                           <span className="text-[10px] font-bold uppercase tracking-widest text-brand bg-brand-soft px-3 py-1 rounded-full mb-4 inline-block">
+                              Liquidity Segment
+                           </span>
+                           <h3 className="text-2xl font-bold text-accent mb-2">{pool.name}</h3>
+                           <p className="text-sm text-muted-text">Constituent Vintages: {pool.vintages}</p>
+                        </div>
+                        <div className="text-2xl font-bold text-brand bg-white px-6 py-3 rounded-2xl border border-border-subtle shadow-sm">
+                           ${pool.symbol}
+                        </div>
+                     </div>
+                     
+                     <div className="grid grid-cols-3 gap-6 mb-10 pb-10 border-b border-border-subtle">
+                        <div>
+                           <p className="label-meta text-[10px] mb-1">Liquidity (TVL)</p>
+                           <p className="font-bold text-accent">{pool.liquidity}</p>
+                        </div>
+                        <div>
+                           <p className="label-meta text-[10px] mb-1">Daily Volume</p>
+                           <p className="font-bold text-accent">{pool.volume}</p>
+                        </div>
+                        <div className="text-right">
+                           <p className="label-meta text-[10px] mb-1">Standard</p>
+                           <p className="font-bold text-brand">{pool.tokens}</p>
+                        </div>
+                     </div>
+
+                     <div className="flex gap-4">
+                        <Button className="flex-1 py-5 flex items-center justify-center gap-2 bg-accent text-white">
+                           Trade on DEX <ExternalLink size={16} />
+                        </Button>
+                        <Button variant="secondary" className="flex-1 py-5 flex items-center justify-center gap-2">
+                           Mint / Redeem <Shield size={16} />
+                        </Button>
+                     </div>
+                  </div>
+                ))}
+             </div>
+           ) : (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+               {projects.map((project) => (
+                 <ProjectCard key={project.id} project={project} onRFQ={() => setRfqProject(project)} />
+               ))}
+             </div>
+           )}
         </div>
       </section>
+
+      <RFQModal 
+        isOpen={!!rfqProject} 
+        onClose={() => setRfqProject(null)} 
+        project={rfqProject} 
+      />
 
       {/* Info Section about Compliance */}
       <section className="bg-accent py-24 text-white">

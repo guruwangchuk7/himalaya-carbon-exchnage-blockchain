@@ -14,6 +14,8 @@ const NavLink = ({ href, children }: { href: string; children: React.ReactNode }
   </Link>
 );
 
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+
 export const Navbar = () => {
   return (
     <nav aria-label="Primary" className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 py-6">
@@ -37,28 +39,22 @@ export const Navbar = () => {
         </Link>
         
         <ul className="hidden md:flex items-center gap-8" role="list">
-          <li><NavLink href="#features">Platform</NavLink></li>
           <li><NavLink href="/marketplace">Marketplace</NavLink></li>
+          <li><NavLink href="/transparency">Transparency</NavLink></li>
           <li><NavLink href="/dashboard">Dashboard</NavLink></li>
           <li><NavLink href="/retire">Retire Credits</NavLink></li>
-          <li><NavLink href="#subscribe">Policy</NavLink></li>
         </ul>
         
         <div className="flex items-center gap-4">
-          <Button
-            href="/dashboard"
-            variant="secondary"
-            className="px-4 py-2 text-sm hidden sm:block"
-            aria-label="Access the registry dashboard"
-          >
-            Access registry
-          </Button>
+          <div className="hidden sm:block">
+            <ConnectButton accountStatus="avatar" chainStatus="icon" showBalance={false} />
+          </div>
           <Button
             href="#subscribe"
             className="px-5 py-2 text-sm"
             aria-label="Request platform access"
           >
-            Request access
+            Access registry
           </Button>
         </div>
       </motion.div>

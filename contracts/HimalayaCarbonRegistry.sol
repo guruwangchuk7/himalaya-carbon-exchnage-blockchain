@@ -15,8 +15,8 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 contract HimalayaCarbonRegistry is ERC1155, Ownable, ERC1155Supply {
     using Strings for uint256;
 
-    // Project Status Enum
-    enum ProjectStatus { Pending, Authorized, Issued, Retired }
+    // Project Status Enum (Sovereign Lifecycle)
+    enum ProjectStatus { Pending, Authorized, Issued, Retired, Cancelled, Transferred }
 
     // Registry Participant Roles (Institutional Whitelist)
     mapping(address => bool) public authorizedParticipants;
@@ -25,6 +25,7 @@ contract HimalayaCarbonRegistry is ERC1155, Ownable, ERC1155Supply {
     struct ProjectMetadata {
         string projectName;
         string projectID; // CAD Trust ID
+        string unitBatchID; // Registry Unit/Batch ID
         uint256 vintageYear;
         ProjectStatus status;
         bool isArticle6Authorized;
@@ -32,11 +33,13 @@ contract HimalayaCarbonRegistry is ERC1155, Ownable, ERC1155Supply {
         string itmoAuthorizationID; // Bilateral agreement ID (e.g., BT-SG-2025)
         string methodology;
         string serialNumber;
+        string registryLink; // Direct link to national registry record
         uint256 totalIssuance;
         uint256 retiredAmount;
     }
 
     mapping(uint256 => ProjectMetadata) public projectData;
+    uint256[] public projectIds;
     string public name = "Himalaya Carbon Registry";
     string public symbol = "HCR";
 
@@ -69,9 +72,46 @@ contract HimalayaCarbonRegistry is ERC1155, Ownable, ERC1155Supply {
     ) public onlyOwner {
         if (bytes(projectData[id].projectID).length == 0) {
             projectData[id] = metadata;
+            projectIds.push(id);
         }
         _mint(to, id, amount, "");
         emit CarbonMinted(to, id, amount, metadata.projectID);
+    }
+
+    /**
+     * @notice Batch mints carbon credits for multiple projects or participants.
+     */
+    function batchMintCarbonCredits(
+        address[] memory tos,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        ProjectMetadata[] memory metadatas
+    ) public onlyOwner {
+        require(tos.length == ids.length && ids.length == amounts.length && amounts.length == metadatas.length, "Array mismatch");
+        for (uint256 i = 0; i < tos.length; i++) {
+            mintCarbonCredit(tos[i], ids[i], amounts[i], metadatas[i]);
+        }
+    }
+
+    /**
+     * @notice Returns all project IDs registered in the system.
+     */
+    function getProjectIds() public view returns (uint256[] memory) {
+        return projectIds;
+    }
+
+    /**
+     * @notice Returns the count of projects.
+     */
+    function getProjectCount() public view returns (uint256) {
+        return projectIds.length;
+    }
+
+    /**
+     * @notice Returns complete metadata for a given project ID.
+     */
+    function getProject(uint256 id) public view returns (ProjectMetadata memory) {
+        return projectData[id];
     }
 
     /**
