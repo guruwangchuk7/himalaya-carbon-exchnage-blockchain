@@ -38,19 +38,20 @@ export const Navbar = () => {
         
         <ul className="hidden md:flex items-center gap-8" role="list">
           <li><NavLink href="#features">Platform</NavLink></li>
-          <li><NavLink href="#templates">Infrastructure</NavLink></li>
-          <li><NavLink href="#pricing">Access</NavLink></li>
+          <li><NavLink href="/marketplace">Marketplace</NavLink></li>
+          <li><NavLink href="/dashboard">Dashboard</NavLink></li>
+          <li><NavLink href="/retire">Retire Credits</NavLink></li>
           <li><NavLink href="#subscribe">Policy</NavLink></li>
         </ul>
         
         <div className="flex items-center gap-4">
           <Button
-            href="#features"
+            href="/dashboard"
             variant="secondary"
             className="px-4 py-2 text-sm hidden sm:block"
-            aria-label="Read the platform brief"
+            aria-label="Access the registry dashboard"
           >
-            Read brief
+            Access registry
           </Button>
           <Button
             href="#subscribe"

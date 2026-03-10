@@ -168,6 +168,11 @@ function AccessCard({ plan, stage, index }: { plan: Plan; stage: AccessStage; in
         variant={plan.highlighted ? "primary" : "secondary"}
         className="mt-auto w-full border border-border-subtle"
         aria-label={`${plan.name} ${stage} access`}
+        onClick={() => {
+          if (plan.name !== "Observer") {
+            console.log(`Access requested for ${plan.name} in ${stage} stage.`);
+          }
+        }}
       >
         {plan.name === "Observer" ? "Review brief" : "Request access"}
       </Button>
