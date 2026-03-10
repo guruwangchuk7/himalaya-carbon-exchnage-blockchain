@@ -14,11 +14,11 @@ import "@rainbow-me/rainbowkit/styles.css";
 
 const config = getDefaultConfig({
   appName: "Himalaya Carbon Exchange",
-  projectId: "YOUR_PROJECT_ID", // TODO: Move to .env
+  projectId: process.env.NEXT_PUBLIC_RAINBOW_PROJECT_ID || "YOUR_PROJECT_ID",
   chains: [polygon, polygonAmoy],
   transports: {
-    [polygon.id]: http(),
-    [polygonAmoy.id]: http(),
+    [polygon.id]: http(process.env.NEXT_PUBLIC_RPC_URL_MAINNET),
+    [polygonAmoy.id]: http(process.env.NEXT_PUBLIC_RPC_URL),
   },
   ssr: true,
 });
@@ -26,6 +26,12 @@ const config = getDefaultConfig({
 const queryClient = new QueryClient();
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
@@ -35,7 +41,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
             borderRadius: "large",
           })}
         >
-          {children}
+          {/* 
+             Only render children when mounted to prevent wallet extensions 
+             (like Phantom/MetaMask) from triggering errors during initial 
+             page load/hydration. Returns null initially to match server-side 
+             rendering state.
+          */}
+          {mounted ? children : null}
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
