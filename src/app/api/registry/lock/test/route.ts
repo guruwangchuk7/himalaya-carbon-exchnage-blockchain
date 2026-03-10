@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-
-const REGISTRY_AUTH_TOKEN = process.env.REGISTRY_BRIDGE_AUTH || "test-lock-token-2026";
+import { HimalayaSecurity } from "@/lib/security";
 const BRIDGE_URL = "http://localhost:3000/api/registry/lock";
 
 /**
@@ -28,16 +27,22 @@ export async function POST() {
   };
 
   try {
-    process.stdout.write("Registry Simulator: Sending LOCK signal to Himalaya Carbon Engine...\n");
+    process.stdout.write("Registry Simulator: Generating Signed Sovereign Signal...\n");
     
-    // Call the Bridge endpoint recursively (internal call simulation)
+    // 1. Prepare and stringify the payload
+    const payload = JSON.stringify(mockLockSignal);
+
+    // 2. Compute the HMAC Signature
+    const signature = HimalayaSecurity.signPayload(payload);
+
+    // 3. Dispatch to the Bridge with Protected Headers
     const response = await fetch(BRIDGE_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${REGISTRY_AUTH_TOKEN}`,
+        "X-Registry-Signature": signature,
       },
-      body: JSON.stringify(mockLockSignal),
+      body: payload,
     });
 
     const data = await response.json();

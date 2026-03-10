@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { HimalayaSecurity } from "@/lib/security";
 import { walletClient, account, publicClient } from "@/lib/blockchain";
 import { REGISTRY_ABI, REGISTRY_ADDRESS } from "@/constants";
+
+const ParticipantUpdateSchema = z.object({
+  participantAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
+  status: z.boolean(),
+});
 
 /**
  * Institutional Participant Management Endpoint
@@ -21,14 +28,27 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { participantAddress, status } = await request.json();
+    const rawBody = await request.text();
+    const signature = request.headers.get("X-Registry-Signature");
+
+    // 1. Authenticate with HMAC-SHA256 (Sovereign Trust Layer)
+    if (!signature || !HimalayaSecurity.verifyRegistrySignature(rawBody, signature)) {
+      process.stderr.write("Unauthorized or Tampered registry signal detected.\n");
+      return NextResponse.json({ error: "Invalid signature. Sovereign trust violation." }, { status: 401 });
+    }
+
+    const body = JSON.parse(rawBody);
+
+    // 2. Validate Payload (Strict Integrity)
+    const validation = ParticipantUpdateSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json({ error: "Invalid participant payload.", details: validation.error.format() }, { status: 400 });
+    }
+
+    const { participantAddress, status } = validation.data;
 
     if (!walletClient || !account) {
       return NextResponse.json({ error: "Institutional relayer not configured." }, { status: 500 });
-    }
-
-    if (!participantAddress || !participantAddress.startsWith("0x")) {
-      return NextResponse.json({ error: "Invalid participant address." }, { status: 400 });
     }
 
     process.stdout.write(`Registry Admin: Updating authorization for ${participantAddress} to ${status}...\n`);
@@ -44,6 +64,9 @@ export async function POST(request: Request) {
     const hash = await walletClient.writeContract(txRequest);
     
     process.stdout.write(`Registry Admin: Transaction submitted ${hash}\n`);
+
+    // 3. Log Administrative Security Action
+    HimalayaSecurity.logAuditAction("WHITELIST_UPDATE", { participantAddress, status, hash });
 
     return NextResponse.json({
       status: "Submitted",

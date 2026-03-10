@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { HimalayaSecurity, RegistryMetadataSchema } from "@/lib/security";
 import { mintFromRegistry } from "@/lib/blockchain";
-
-// Institutional API Configuration (Keep in .env!)
-const REGISTRY_AUTH_TOKEN = process.env.REGISTRY_BRIDGE_AUTH || "test-lock-token-2026";
 
 /**
  * Himalaya Carbon Registry Bridge Endpoint
@@ -12,24 +11,27 @@ const REGISTRY_AUTH_TOKEN = process.env.REGISTRY_BRIDGE_AUTH || "test-lock-token
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const authHeader = request.headers.get("Authorization");
+    const rawBody = await request.text();
+    const signature = request.headers.get("X-Registry-Signature");
 
-    // 1. Authenticate National Registry Signal
-    if (authHeader !== `Bearer ${REGISTRY_AUTH_TOKEN}`) {
-      process.stderr.write("Unauthorized access attempt to Registry Lock endpoint.\n");
-      return NextResponse.json({ error: "Unauthorized registry signal." }, { status: 401 });
+    // 1. Authenticate with HMAC-SHA256 (Sovereign Trust Layer)
+    if (!signature || !HimalayaSecurity.verifyRegistrySignature(rawBody, signature)) {
+      process.stderr.write("Unauthorized or Tampered registry signal detected.\n");
+      return NextResponse.json({ error: "Invalid signature. Sovereign trust violation." }, { status: 401 });
     }
 
-    const { recipient, id, amount, metadata } = body;
+    const body = JSON.parse(rawBody);
 
-    // 2. Validate Metadata Structure (Article 6 criteria)
-    if (!recipient || !id || !amount || !metadata?.projectID) {
-      return NextResponse.json({ error: "Incomplete Article 6 metadata provided." }, { status: 400 });
+    // 2. Validate Metadata via Zod (Strict Integrity)
+    const validation = RegistryMetadataSchema.safeParse(body);
+    if (!validation.success) {
+      process.stderr.write(`Metadata validation failed: ${validation.error.message}\n`);
+      return NextResponse.json({ error: "Article 6 schema violation.", details: validation.error.format() }, { status: 400 });
     }
+
+    const { recipient, id, amount, metadata } = validation.data;
 
     // 3. Transform to Smart Contract Metadata Format
-    // enum ProjectStatus { Pending, Authorized, Issued, Retired, Cancelled, Transferred }
     const contractMetadata = {
       projectName: metadata.projectName,
       projectID: metadata.projectID,
@@ -49,7 +51,6 @@ export async function POST(request: Request) {
     // 4. Trigger Secure On-chain Minting via Relayer Wallet
     process.stdout.write(`Registry Bridge: Synchronizing ${amount} units for ${metadata.projectID}...\n`);
     
-    // Convert to proper BigInts for viem
     const result = await mintFromRegistry(
       recipient as `0x${string}`, 
       BigInt(id), 
@@ -60,7 +61,9 @@ export async function POST(request: Request) {
     if (result.success) {
       process.stdout.write(`Registry Bridge: SUCCESSFULLY MINTED credits on-chain. TX: ${result.hash}\n`);
       
-      // Phase 2 Success: Respond to the Registry with the on-chain receipt
+      // 5. Log Administrative Audit Action
+      HimalayaSecurity.logAuditAction("MINT_VINTAGE", { projectID: metadata.projectID, amount, hash: result.hash });
+
       return NextResponse.json({
         status: "Synchronized",
         message: "Article 6.2 Carbon Credits minted successfully.",
