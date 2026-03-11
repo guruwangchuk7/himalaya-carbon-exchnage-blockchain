@@ -109,7 +109,7 @@ const RFQModal = ({ isOpen, onClose, project }: any) => {
   );
 };
 
-const ProjectCard = ({ project, onRFQ }: { project: any, onRFQ: any }) => (
+const ProjectCard = ({ project, onRFQ, onAcquire }: { project: any, onRFQ: any, onAcquire: any }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
@@ -155,7 +155,7 @@ const ProjectCard = ({ project, onRFQ }: { project: any, onRFQ: any }) => (
       <div className="pt-6 border-t border-border-subtle flex flex-col gap-3">
         <Button 
           className="w-full py-4 text-xs flex items-center justify-center gap-2"
-          onClick={() => alert(`Initiating acquisition workflow for ${project.id}. Institutional verification required.`)}
+          onClick={onAcquire}
         >
           Acquire Instant <Zap size={14} />
         </Button>
@@ -173,6 +173,12 @@ const ProjectCard = ({ project, onRFQ }: { project: any, onRFQ: any }) => (
 export default function MarketplacePage() {
   const [filter, setFilter] = useState("All");
   const [rfqProject, setRfqProject] = useState<any>(null);
+  const [toast, setToast] = useState<{message: string, isVisible: boolean}>({ message: "", isVisible: false });
+
+  const showToast = (msg: string) => {
+    setToast({ message: msg, isVisible: true });
+    setTimeout(() => setToast({ message: "", isVisible: false }), 4000);
+  };
 
   const projects = [
     {
@@ -226,34 +232,51 @@ export default function MarketplacePage() {
   ];
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background relative overflow-hidden">
       <Navbar />
       
       {/* Hero Section of Marketplace */}
-      <section className="pt-40 pb-20 bg-secondary-bg/30">
-        <div className="container mx-auto px-6">
+      <section className="pt-40 pb-20 bg-secondary-bg/30 relative">
+        <div className="absolute inset-0 bg-brand/5 blur-3xl rounded-full translate-y-[-50%] pointer-events-none" />
+        <div className="container mx-auto px-6 relative z-10">
           <div className="max-w-3xl mb-12">
-             <h1 className="display-h1 text-foreground mb-6">Carbon Marketplace</h1>
-             <p className="body-primary">
+             <motion.h1 
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               className="display-h1 text-foreground mb-6"
+             >
+               Carbon Marketplace
+             </motion.h1>
+             <motion.p 
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ delay: 0.1 }}
+               className="body-primary"
+             >
                Browse and acquire sovereign carbon credits directly from Bhutan's national registry. All assets are CAD Trust synchronized and Article 6 compliant.
-             </p>
+             </motion.p>
           </div>
 
           {/* Filters and Search Bar */}
-          <div className="flex flex-col md:flex-row gap-4 items-center mb-12">
-            <div className="relative flex-1 group">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex flex-col md:flex-row gap-4 items-center mb-12"
+          >
+            <div className="relative flex-1 group w-full">
                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-tertiary-text group-focus-within:text-brand transition-colors" size={20} />
                <input
                  type="text"
                  placeholder="Search by Project ID, Methodology or Name..."
-                 className="w-full pl-12 pr-4 py-4 bg-surface border border-border-subtle rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all text-foreground"
+                 className="w-full pl-12 pr-4 py-4 bg-surface border border-border-subtle rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all text-foreground shadow-sm"
                />
             </div>
             
-            <div className="flex gap-4">
-               <div className="relative">
+            <div className="flex gap-4 w-full md:w-auto">
+               <div className="relative flex-1 md:flex-none">
                   <select
-                    className="appearance-none bg-surface border border-border-subtle px-6 py-4 rounded-2xl text-sm font-medium pr-12 focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer"
+                    className="w-full appearance-none bg-surface border border-border-subtle px-6 py-4 rounded-2xl text-sm font-medium pr-12 focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer shadow-sm"
                     onChange={(e) => setFilter(e.target.value)}
                   >
                     <option>All Methodologies</option>
@@ -264,18 +287,19 @@ export default function MarketplacePage() {
                   <Filter className="absolute right-4 top-1/2 -translate-y-1/2 text-tertiary-text pointer-events-none" size={18} />
                </div>
                
-               <Button variant="secondary" className="px-6 py-4 rounded-2xl flex gap-2 items-center text-sm">
+               <Button variant="secondary" className="px-6 py-4 rounded-2xl flex gap-2 items-center text-sm shadow-sm bg-surface hover:bg-surface/80">
                   <ArrowUpDown size={18} /> Sort
                </Button>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Market Transparency Section */}
       <section className="pb-20">
         <div className="container mx-auto px-6">
-           <div className="bg-surface border border-border-subtle rounded-[40px] p-10 shadow-soft-float">
+           <div className="bg-surface border border-border-subtle rounded-[40px] p-6 pt-10 md:p-10 shadow-soft-float relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand via-brand-soft to-accent opacity-50" />
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
                  <div>
                     <h2 className="card-h3 m-0 flex items-center gap-3">
@@ -283,35 +307,57 @@ export default function MarketplacePage() {
                     </h2>
                     <p className="text-sm text-muted-text mt-2">Aggregated weighted average for Authorized Article 6.2 Units.</p>
                  </div>
-                 <div className="flex items-center gap-6">
+                 <div className="flex items-center gap-6 bg-background rounded-2xl p-4 border border-border-subtle border-dashed">
                     <div className="text-right">
-                       <p className="label-meta text-[10px] uppercase">Current Index</p>
-                       <p className="text-2xl font-bold text-brand">$21.45 <span className="text-xs text-success font-bold">+4.2%</span></p>
+                       <p className="label-meta text-[10px] uppercase tracking-widest text-muted-text">Current Index</p>
+                       <p className="text-2xl font-bold text-brand font-mono tracking-tight">$21.45 <span className="text-sm text-success font-bold ml-1">+4.2%</span></p>
                     </div>
-                    <div className="h-10 w-px bg-border-subtle hidden md:block" />
+                    <div className="h-10 w-px bg-border-subtle" />
                     <div className="text-right">
-                       <p className="label-meta text-[10px] uppercase">Registry Volume</p>
-                       <p className="text-2xl font-bold text-accent">1.2M <span className="text-xs text-muted-text font-normal">tCO2e</span></p>
+                       <p className="label-meta text-[10px] uppercase tracking-widest text-muted-text">Registry Volume</p>
+                       <p className="text-2xl font-bold text-accent font-mono tracking-tight">1.2M <span className="text-xs text-muted-text font-sans">tCO2e</span></p>
                     </div>
                  </div>
               </div>
               
-              {/* Mock Price Chart */}
-              <div className="h-48 w-full bg-brand-soft/20 rounded-2xl border border-brand/5 relative flex items-end px-4 pb-4 gap-2 overflow-hidden">
-                 <div className="absolute inset-0 bg-linear-to-t from-brand/5 to-transparent pointer-events-none" />
-                 {[40, 55, 45, 60, 50, 75, 65, 85, 80, 95, 85, 100].map((h, i) => (
-                    <motion.div
-                       key={i}
-                       initial={{ height: 0 }}
-                       animate={{ height: `${h}%` }}
-                       transition={{ duration: 1, delay: i * 0.05 }}
-                       className="flex-1 bg-brand rounded-t-lg opacity-40 hover:opacity-100 transition-opacity cursor-pointer group relative"
-                    >
-                       <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-accent text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                          $19.50 + {i}%
-                       </div>
-                    </motion.div>
-                 ))}
+              {/* Premium Glassmorphic Price Chart */}
+              <div className="h-64 md:h-80 w-full bg-background/50 rounded-3xl border border-border-subtle relative flex items-end px-3 sm:px-6 pb-6 pt-16 gap-1 sm:gap-3 overflow-hidden shadow-inner isolate">
+                 {/* Gradient Overlay */}
+                 <div className="absolute inset-0 bg-linear-to-t from-brand/10 via-brand/5 to-transparent pointer-events-none -z-10" />
+                 
+                 {/* Grid lines */}
+                 <div className="absolute inset-0 pointer-events-none flex flex-col justify-between py-6 px-6 opacity-20 -z-10">
+                    {[1,2,3,4].map(i => <div key={i} className="border-b border-dashed border-accent w-full flex-1" />)}
+                 </div>
+
+                 {[40, 55, 45, 60, 50, 75, 65, 85, 80, 95, 85, 100].map((h, i) => {
+                    const price = (19.50 * (1 + i/100)).toFixed(2);
+                    return (
+                      <motion.div
+                         key={i}
+                         initial={{ height: 0, opacity: 0 }}
+                         whileInView={{ height: `${h}%`, opacity: 1 }}
+                         viewport={{ once: true }}
+                         transition={{ duration: 1.2, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+                         className="flex-1 rounded-t-xl group relative cursor-pointer"
+                      >
+                         {/* Bar Body */}
+                         <div className="absolute inset-x-0 bottom-0 top-0 bg-linear-to-t from-brand/80 to-brand-soft rounded-t-xl opacity-60 group-hover:opacity-100 transition-all shadow-[0_4px_20px_rgba(76,151,216,0.1)] group-hover:shadow-[0_4px_25px_rgba(76,151,216,0.4)]" />
+                         
+                         {/* Bar Cap Highlights */}
+                         <div className="absolute top-0 inset-x-0 h-1 bg-white/40 rounded-t-xl" />
+
+                         {/* Premium Tooltip */}
+                         <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-surface backdrop-blur-xl border border-border-subtle text-foreground text-xs px-4 py-2 rounded-2xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap shadow-shadow-lift z-20 font-bold scale-90 group-hover:scale-100 flex items-center gap-2">
+                            <span className="font-mono">${price}</span>
+                            <span className="text-success font-medium text-[10px] bg-success/10 px-1.5 py-0.5 rounded-sm">+{i}%</span>
+                            
+                            {/* Tooltip Triangle */}
+                            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-surface border-b border-r border-border-subtle rotate-45" />
+                         </div>
+                      </motion.div>
+                    );
+                 })}
               </div>
            </div>
         </div>
@@ -323,70 +369,84 @@ export default function MarketplacePage() {
            <div className="flex gap-4 mb-12 overflow-x-auto pb-4 scrollbar-hide">
               <button 
                 onClick={() => setFilter("All")}
-                className={`px-8 py-3 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${filter === 'All' ? 'bg-accent text-white border-accent' : 'bg-white text-muted-text border-border-subtle'}`}
+                className={`px-8 py-3 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${filter === 'All' ? 'bg-accent text-white border-accent shadow-md' : 'bg-surface text-muted-text border-border-subtle hover:bg-surface/80'}`}
               >
                 Individual Vintages
               </button>
               <button 
                 onClick={() => setFilter("Pools")}
-                className={`px-8 py-3 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${filter === 'Pools' ? 'bg-accent text-white border-accent' : 'bg-white text-muted-text border-border-subtle'}`}
+                className={`px-8 py-3 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${filter === 'Pools' ? 'bg-accent text-white border-accent shadow-md' : 'bg-surface text-muted-text border-border-subtle hover:bg-surface/80'}`}
               >
                 ERC-20 Carbon Pools
               </button>
-              <button className="px-8 py-3 rounded-2xl text-xs font-bold whitespace-nowrap border border-border-subtle text-muted-text opacity-50 cursor-not-allowed">
+              <button className="px-8 py-3 rounded-2xl text-xs font-bold whitespace-nowrap border border-border-subtle text-muted-text/50 bg-background cursor-not-allowed">
                 Forward Contracts (Q4)
               </button>
            </div>
 
            {filter === "Pools" ? (
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+             <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                className="grid grid-cols-1 md:grid-cols-2 gap-8"
+             >
                 {projectPools.map((pool) => (
-                  <div key={pool.id} className="bg-surface border border-border-subtle p-10 rounded-[40px] shadow-soft-float relative overflow-hidden group hover:border-brand/40 transition-all">
-                     <div className="flex justify-between items-start mb-8">
+                  <div key={pool.id} className="bg-surface border border-border-subtle p-8 md:p-10 rounded-[40px] shadow-soft-float relative overflow-hidden group hover:border-brand/40 transition-all hover:shadow-shadow-lift">
+                     <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand/5 rounded-full blur-3xl group-hover:bg-brand/10 transition-colors" />
+                     <div className="flex flex-col xl:flex-row justify-between items-start mb-8 gap-4">
                         <div>
-                           <span className="text-[10px] font-bold uppercase tracking-widest text-brand bg-brand-soft px-3 py-1 rounded-full mb-4 inline-block">
+                           <span className="text-[10px] font-bold uppercase tracking-widest text-brand bg-brand/10 px-3 py-1.5 rounded-full mb-4 inline-block border border-brand/20">
                               Liquidity Segment
                            </span>
                            <h3 className="text-2xl font-bold text-accent mb-2">{pool.name}</h3>
-                           <p className="text-sm text-muted-text">Constituent Vintages: {pool.vintages}</p>
+                           <p className="text-sm text-muted-text">Constituent Vintages: <span className="font-semibold text-foreground">{pool.vintages}</span></p>
                         </div>
-                        <div className="text-2xl font-bold text-brand bg-white px-6 py-3 rounded-2xl border border-border-subtle shadow-sm">
+                        <div className="text-xl md:text-2xl font-bold text-brand bg-background px-6 py-3 rounded-2xl border border-border-subtle shadow-sm font-mono tracking-tight">
                            ${pool.symbol}
                         </div>
                      </div>
                      
-                     <div className="grid grid-cols-3 gap-6 mb-10 pb-10 border-b border-border-subtle">
+                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 mb-10 pb-10 border-b border-border-subtle">
                         <div>
                            <p className="label-meta text-[10px] mb-1">Liquidity (TVL)</p>
-                           <p className="font-bold text-accent">{pool.liquidity}</p>
+                           <p className="font-bold text-accent font-mono">{pool.liquidity}</p>
                         </div>
                         <div>
                            <p className="label-meta text-[10px] mb-1">Daily Volume</p>
-                           <p className="font-bold text-accent">{pool.volume}</p>
+                           <p className="font-bold text-accent font-mono">{pool.volume}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="sm:text-right hidden sm:block">
                            <p className="label-meta text-[10px] mb-1">Standard</p>
                            <p className="font-bold text-brand">{pool.tokens}</p>
                         </div>
                      </div>
 
-                     <div className="flex gap-4">
-                        <Button className="flex-1 py-5 flex items-center justify-center gap-2 bg-accent text-white">
+                     <div className="flex flex-col sm:flex-row gap-4">
+                        <Button className="flex-1 py-5 flex items-center justify-center gap-2 bg-accent text-white shadow-md">
                            Trade on DEX <ExternalLink size={16} />
                         </Button>
-                        <Button variant="secondary" className="flex-1 py-5 flex items-center justify-center gap-2">
+                        <Button variant="secondary" className="flex-1 py-5 flex items-center justify-center gap-2 bg-surface hover:bg-surface/80">
                            Mint / Redeem <Shield size={16} />
                         </Button>
                      </div>
                   </div>
                 ))}
-             </div>
+             </motion.div>
            ) : (
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+             <motion.div 
+               initial={{ opacity: 0 }} 
+               animate={{ opacity: 1 }}
+               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+             >
                {projects.map((project) => (
-                 <ProjectCard key={project.id} project={project} onRFQ={() => setRfqProject(project)} />
+                 <ProjectCard 
+                   key={project.id} 
+                   project={project} 
+                   onRFQ={() => setRfqProject(project)} 
+                   onAcquire={() => showToast(`Initiating acquisition workflow for ${project.id}. Institutional verification required.`)}
+                 />
                ))}
-             </div>
+              </motion.div>
            )}
         </div>
       </section>
@@ -458,6 +518,21 @@ export default function MarketplacePage() {
            </div>
         </div>
       </section>
+
+      {/* Toast Notification */}
+      {toast.isVisible && (
+         <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="fixed bottom-8 right-8 z-50 bg-surface border border-brand/20 shadow-shadow-lift rounded-2xl p-4 flex items-center gap-4 max-w-sm"
+         >
+            <div className="bg-brand/10 p-2 rounded-full text-brand">
+               <Info size={20} />
+            </div>
+            <p className="text-sm font-medium pr-4">{toast.message}</p>
+         </motion.div>
+      )}
     </main>
   );
 }

@@ -7,15 +7,19 @@ import { useRef } from "react";
 
 export const Hero = () => {
   const targetRef = useRef<HTMLDivElement>(null);
+  
   const { scrollYProgress } = useScroll({
     target: targetRef,
     offset: ["start start", "end start"],
   });
-  
-  const y = useTransform(scrollYProgress, [0, 0.35], [50, 0]);
-  const opacity = useTransform(scrollYProgress, [0, 0.18], [0, 1]);
-  const scale = useTransform(scrollYProgress, [0, 0.8], [0.88, 1]);
-  const imageRadius = useTransform(scrollYProgress, [0, 0.8], [24, 0]);
+
+  // Parallax translation mapping (moves down while page scrolls down = slower relative visual speed)
+  const imageY = useTransform(scrollYProgress, [0, 1], [0, 150]);
+  // Perspective 3D tilt
+  const rotateX = useTransform(scrollYProgress, [0, 1], [0, 20]);
+  // Subtle scale-down effect
+  const imageScale = useTransform(scrollYProgress, [0, 1], [1, 0.9]);
+  const imageOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0.2]);
 
   return (
     <section
@@ -74,20 +78,30 @@ export const Hero = () => {
         <motion.div
           initial={{ opacity: 0, y: 50, scale: 0.98 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true, amount: 0.3 }}
+          viewport={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          style={{ y, opacity, scale, borderRadius: imageRadius }}
-          className="mt-20 relative w-full max-w-4xl mx-auto rounded-3xl shadow-soft-float overflow-hidden border border-border-subtle bg-surface"
+          className="mt-20 w-full max-w-4xl mx-auto"
+          style={{ perspective: "1200px" }}
         >
-          <div className="absolute inset-0 bg-white/20 backdrop-blur-xl -z-10" />
-          <Image
-            src="/JeI7uULY0av9DxD7q7NVLTuoNc.avif"
-            alt="Himalaya Carbon platform overview"
-            width={1200}
-            height={800}
-            className="w-full h-auto object-cover"
-            priority
-          />
+          <motion.div
+            style={{ 
+              y: imageY,
+              rotateX,
+              scale: imageScale,
+              opacity: imageOpacity,
+            }}
+            className="relative w-full rounded-3xl shadow-soft-float overflow-hidden border border-border-subtle bg-surface transform-gpu"
+          >
+            <div className="absolute inset-0 bg-white/20 backdrop-blur-xl -z-10" />
+            <Image
+              src="/JeI7uULY0av9DxD7q7NVLTuoNc.avif"
+              alt="Himalaya Carbon platform overview"
+              width={1200}
+              height={800}
+              className="w-full h-auto object-cover dashboard-mockup"
+              priority
+            />
+          </motion.div>
         </motion.div>
       </div>
     </section>
