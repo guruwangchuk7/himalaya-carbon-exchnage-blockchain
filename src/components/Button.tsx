@@ -42,21 +42,23 @@ export const Button = ({ variant = "primary", className, children, ...props }: B
         whileTap={{ scale: 0.98 }}
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
         className={classes}
-        {...anchorProps}
+        {...(anchorProps as any)}
       >
         {children}
       </motion.a>
     );
   }
 
+  const btnProps = props as React.ButtonHTMLAttributes<HTMLButtonElement>;
+
   return (
     <motion.button
-      type={props.type ?? "button"}
+      type={btnProps.type ?? "button"}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       className={classes}
-      {...props}
+      {...(props as any)}
     >
       {children}
     </motion.button>
