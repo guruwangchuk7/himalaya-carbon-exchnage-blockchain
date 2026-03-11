@@ -33,3 +33,63 @@ export async function getMarketplaceProjects() {
     return { success: false, error: error.message, source: "ERROR" };
   }
 }
+
+export async function submitRFQ(projectId: string, volume: number) {
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Authentication required for institutional RFQ." };
+
+    // 1. Get user profile
+    const profile = await prisma.profile.findUnique({
+      where: { userId: user.id }
+    });
+
+    if (!profile) return { success: false, error: "Institutional profile not found." };
+
+    // 2. Create the RFQ
+    const rfq = await prisma.rFQ.create({
+      data: {
+        buyerId: profile.id,
+        projectId: projectId, // This should be the database ID or unique code
+        targetVolume: volume,
+        targetPriceCents: 0, // Negotiable starting point
+        status: "OPEN"
+      }
+    });
+
+    return { success: true, rfqId: rfq.id };
+  } catch (error: any) {
+    console.error("RFQ Submission Error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function getUserRFQs() {
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, data: [] };
+
+    const profile = await prisma.profile.findUnique({
+      where: { userId: user.id }
+    });
+
+    if (!profile) return { success: false, data: [] };
+
+    const rfqs = await prisma.rFQ.findMany({
+      where: { buyerId: profile.id },
+      include: { project: true },
+      orderBy: { createdAt: "desc" }
+    });
+
+    return { success: true, data: rfqs };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+

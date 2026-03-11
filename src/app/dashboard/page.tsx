@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Shield, ArrowUpRight, BarChart3, Database, CheckCircle2, AlertCircle, ExternalLink, Award, Globe, Zap, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/Button";
 import { useState, useEffect } from "react";
+import { RFQStatusPanel } from "@/components/RFQStatusPanel";
 
 const StatCard = ({ label, value, icon: Icon, trend }: any) => (
   <div className="bg-surface border border-border-subtle p-6 rounded-3xl shadow-soft-float">
@@ -108,6 +109,8 @@ export default function DashboardPage() {
                   </div>
                </div>
             </section>
+
+            <RFQStatusPanel />
 
             <section className="bg-surface border border-border-subtle rounded-3xl p-8 shadow-soft-float">
                <div className="flex justify-between items-center mb-8">

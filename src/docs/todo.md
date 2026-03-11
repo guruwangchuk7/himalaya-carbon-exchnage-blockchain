@@ -110,7 +110,7 @@ Implementation rule:
 - [x] **Phase 1: Foundation & Secure Environment** (Auth & APIs).
 - [x] **Phase 2: Compliance, Identity & Workflows** (Postgres DB Schema).
 - [x] **Phase 3: Web3 Indexing & Market Discovery** (Viem Sync).
-- [ ] **Phase 4: Off-Chain Trading Engine** (RFQ Order Book).
+- [x] **Phase 4: Off-Chain Trading Engine** (RFQ Order Book).
 
 ## Recommended Execution Order
 1. Design system foundation

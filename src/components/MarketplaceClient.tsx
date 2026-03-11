@@ -34,18 +34,13 @@ const RFQModal = ({ isOpen, onClose, project }: any) => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/market/rfq", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          buyer: "Institutional Participant",
-          projectId: project.id,
-          amount: amount,
-          purpose: "Sovereign Retirement / Secondary Market Seed"
-        }),
-      });
-      const data = await res.json();
-      if (data.rfqId) setSuccess(true);
+      const { submitRFQ } = await import("@/lib/actions/market");
+      const result = await submitRFQ(project.id, parseInt(amount));
+      if (result.success) {
+        setSuccess(true);
+      } else {
+        alert(result.error || "RFQ submission failed.");
+      }
     } catch (e) {
       alert("RFQ submission failed.");
     } finally {
