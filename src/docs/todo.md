@@ -99,11 +99,18 @@ Implementation rule:
 - [x] Sovereign Retirement Workflow generating verifiable impact certificates.
 
 ## 14. QA And Release
+## 14. QA And Release
 - [x] Test layout and interactions on desktop, tablet, and mobile breakpoints.
 - [x] Verify behavior in current Chrome, Edge, Safari, and Firefox.
 - [x] Run linting and any project test suite before release.
 - [x] Prepare release notes and a short implementation summary mapped to the source docs.
 - [x] Mark completed tasks and convert remaining open items into backlog tickets.
+
+## 15. Backend Integration (Supabase)
+- [x] **Phase 1: Foundation & Secure Environment** (Auth & APIs).
+- [ ] **Phase 2: Compliance, Identity & Workflows** (Postgres DB Schema).
+- [ ] **Phase 3: Web3 Indexing & Market Discovery** (Viem Sync).
+- [ ] **Phase 4: Off-Chain Trading Engine** (RFQ Order Book).
 
 ## Recommended Execution Order
 1. Design system foundation
@@ -114,3 +121,7 @@ Implementation rule:
 6. Footer and conversion layer
 7. Accessibility and performance
 8. QA and release
+9. Phase 1: Foundation & Secure Environment
+10. Phase 2: Compliance, Identity & Workflows
+11. Phase 3: Web3 Indexing & Market Discovery
+12. Phase 4: Off-Chain Trading Engine

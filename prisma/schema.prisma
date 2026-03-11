@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Profile {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String   @unique // Supabase Auth User ID
+  walletAddress  String?  @unique
+  organization   String
+  role           Role     @default(TRADER)
+  isAuthorized   Boolean  @default(false)
+  kycDocumentUrl String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  rfqs           RFQ[]
+}
+
+enum Role {
+  TRADER
+  OPERATOR
+  AUDITOR
+}
+
+model RegistryProject {
+  id                 String             @id @default(cuid())
+  projectId          String             @unique // e.g BHU-RE-2023-001
+  projectName        String
+  methodology        String
+  vintageYear        Int
+  status             ProjectState       @default(DRAFT)
+  totalVolume        Int
+  isArticle6         Boolean            @default(false)
+  documentsUrl       String[]
+  developerId        String             @db.Uuid
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  rfqs               RFQ[]
+}
+
+enum ProjectState {
+  DRAFT
+  UNDER_AUDIT
+  APPROVED
+  ISSUED_ON_CHAIN
+}
+
+model RFQ {
+  id               String          @id @default(cuid())
+  buyerId          String          @db.Uuid
+  buyer            Profile         @relation(fields: [buyerId], references: [id])
+  projectId        String
+  project          RegistryProject @relation(fields: [projectId], references: [id])
+  targetVolume     Int
+  targetPriceCents Int
+  status           RFQStatus       @default(OPEN)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+enum RFQStatus {
+  OPEN
+  NEGOTIATING
+  MATCHED
+  SETTLED_ON_CHAIN
+  CANCELLED
+}
