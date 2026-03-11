@@ -108,8 +108,8 @@ Implementation rule:
 
 ## 15. Backend Integration (Supabase)
 - [x] **Phase 1: Foundation & Secure Environment** (Auth & APIs).
-- [ ] **Phase 2: Compliance, Identity & Workflows** (Postgres DB Schema).
-- [ ] **Phase 3: Web3 Indexing & Market Discovery** (Viem Sync).
+- [x] **Phase 2: Compliance, Identity & Workflows** (Postgres DB Schema).
+- [x] **Phase 3: Web3 Indexing & Market Discovery** (Viem Sync).
 - [ ] **Phase 4: Off-Chain Trading Engine** (RFQ Order Book).
 
 ## Recommended Execution Order

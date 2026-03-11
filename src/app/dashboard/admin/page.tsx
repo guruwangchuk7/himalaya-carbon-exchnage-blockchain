@@ -189,11 +189,65 @@ export default function AdminDashboard() {
                     </div>
                  </div>
               </section>
+
+              <MarketSyncPanel />
            </div>
         </div>
       </div>
 
       <Footer />
     </main>
+  );
+}
+
+function MarketSyncPanel() {
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    setStatus("Initiating Web3 Indexing...");
+    try {
+      const { triggerManualSync } = await import("@/lib/actions/sync");
+      const result = await triggerManualSync();
+      if (result.success) {
+        setStatus(`Successfully synchronized ${result.count} carbon projects.`);
+      } else {
+        setStatus(`Sync failed: ${result.error}`);
+      }
+    } catch (e) {
+      setStatus("Sync failed: Connection error.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  return (
+    <section className="bg-secondary-bg/20 border border-brand/20 p-8 rounded-[32px] overflow-hidden relative">
+      <div className="absolute top-0 right-0 p-4 opacity-10">
+         <RefreshCcw size={48} className={isSyncing ? "animate-spin" : ""} />
+      </div>
+      <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+         Sovereign Market Indexer
+      </h3>
+      <p className="text-xs text-muted-text mb-6">
+         Synchronize on-chain Article 6.2 project metadata with the high-performance marketplace database.
+      </p>
+      
+      {status && (
+         <div className={`text-[10px] font-bold p-3 rounded-lg mb-4 border ${status.includes('fail') ? 'bg-warning/10 border-warning/20 text-warning' : 'bg-success/10 border-success/20 text-success'}`}>
+            {status}
+         </div>
+      )}
+
+      <Button 
+        variant="secondary" 
+        className="w-full py-4 text-xs font-bold flex items-center justify-center gap-2 border-brand/20 text-brand hover:bg-brand/5"
+        onClick={handleSync}
+        disabled={isSyncing}
+      >
+        {isSyncing ? "Indexing Chain Data..." : "Run Marketplace Sync"} <RefreshCcw size={14} className={isSyncing ? "animate-spin" : ""} />
+      </Button>
+    </section>
   );
 }

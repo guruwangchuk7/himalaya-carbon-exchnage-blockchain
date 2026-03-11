@@ -1,235 +1,54 @@
-"use client";
-
 import { Navbar } from "@/components/Navbar";
-import { motion } from "framer-motion";
-import { Search, Filter, ArrowUpDown, Shield, Info, ExternalLink, BarChart3 } from "lucide-react";
-import { Button } from "@/components/Button";
-import Link from "next/link";
-import { useState, useEffect } from "react";
-import { MessageSquare, Zap, Globe, Clock, CheckCircle2 } from "lucide-react";
+import { Shield, Info, ExternalLink, BarChart3 } from "lucide-react";
+import { MarketplaceClient } from "@/components/MarketplaceClient";
+import { getMarketplaceProjects } from "@/lib/actions/market";
+import * as motion from "framer-motion/client";
 
-const projectPools = [
+// Fallback data if DB is empty/unconfigured
+const fallbackProjects = [
   {
-    id: "BHU-NATURE-POOL",
-    name: "Bhutan Nature-Based Composite",
-    symbol: "BNC",
-    vintages: "2023 - 2024",
-    liquidity: "$4.8M",
-    volume: "12,500 t/day",
-    tokens: "ERC-20 (Uniswap Ready)"
+    id: "BHU-RE-2023-001",
+    name: "Wangdue Hydropower Offset",
+    vintage: 2023,
+    methodology: "Renewable Energy (ACM0002)",
+    authorized: true,
+    available: "15,420 tCO2e",
+    price: "$18.50",
+    image: "/images/project-hydro.png",
+    riskScore: "A+",
+    coBenefits: ["SDG 7", "SDG 13", "SDG 17"]
   },
   {
-    id: "BHU-RE-POOL",
-    name: "Sovereign Hydro & Biomass",
-    symbol: "BHR",
-    vintages: "2022 - 2024",
-    liquidity: "$2.1M",
-    volume: "5,200 t/day",
-    tokens: "ERC-20 (Uniswap Ready)"
+    id: "BHU-BIO-2024-004",
+    name: "Phobjikha Conservation Project",
+    vintage: 2024,
+    methodology: "Avoidance/Removal (Nature-Based)",
+    authorized: false,
+    available: "120,000 tCO2e",
+    price: "$24.00",
+    image: "/images/project-forest.png",
+    riskScore: "A",
+    coBenefits: ["SDG 15", "SDG 8", "SDG 1"]
+  },
+  {
+    id: "BHU-FOR-2023-009",
+    name: "Gelephu Forestation Initiative",
+    vintage: 2023,
+    methodology: "Reforestation (AR-ACM0003)",
+    authorized: true,
+    available: "45,000 tCO2e",
+    price: "$22.50",
+    image: "/images/project-forest.png",
+    riskScore: "A+",
+    coBenefits: ["SDG 13", "SDG 15", "SDG 6"]
   }
 ];
 
-const RFQModal = ({ isOpen, onClose, project }: any) => {
-  const [amount, setAmount] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      const res = await fetch("/api/market/rfq", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          buyer: "Institutional Participant",
-          projectId: project.id,
-          amount: amount,
-          purpose: "Sovereign Retirement / Secondary Market Seed"
-        }),
-      });
-      const data = await res.json();
-      if (data.rfqId) setSuccess(true);
-    } catch (e) {
-      alert("RFQ submission failed.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-md bg-accent/20">
-      <motion.div 
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-surface border border-border-subtle p-10 rounded-[48px] shadow-2xl max-w-lg w-full relative overflow-hidden"
-      >
-        {!success ? (
-          <>
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-3">
-              <MessageSquare className="text-brand" /> Institutional RFQ
-            </h2>
-            <p className="text-sm text-muted-text mb-8">
-              Request a custom quote for high-volume acquisition of <strong>{project.name}</strong>. Sovereign brokers provide tiered pricing for orders above 10,000 tCO2e.
-            </p>
-            <div className="space-y-6">
-               <div>
-                  <label className="label-meta text-[10px] uppercase block mb-2">Requested Volume (tCO2e)</label>
-                  <input 
-                    type="number" 
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Min 10,000" 
-                    className="w-full bg-background border border-border-subtle rounded-2xl px-6 py-4 text-xl font-bold"
-                  />
-               </div>
-               <Button 
-                onClick={handleSubmit} 
-                disabled={isSubmitting || !amount}
-                className="w-full py-5 bg-brand text-white flex items-center justify-center gap-2"
-               >
-                 {isSubmitting ? "Submitting Request..." : "Submit Quote Request"} <Zap size={18} />
-               </Button>
-               <button onClick={onClose} className="w-full text-xs text-muted-text font-bold hover:text-accent transition-colors">Cancel Request</button>
-            </div>
-          </>
-        ) : (
-          <div className="text-center py-10">
-             <div className="inline-flex items-center justify-center p-6 bg-success/10 text-success rounded-full mb-8">
-                <CheckCircle2 size={48} />
-             </div>
-             <h2 className="text-2xl font-bold mb-4 text-accent">RFQ Submitted</h2>
-             <p className="text-sm text-muted-text mb-10">Your institutional request has been logged. A sovereign broker will contact you via your registered portal.</p>
-             <Button onClick={onClose} className="w-full py-4 bg-accent text-white rounded-2xl">Close Portal</Button>
-          </div>
-        )}
-      </motion.div>
-    </div>
-  );
-};
-
-const ProjectCard = ({ project, onRFQ, onAcquire }: { project: any, onRFQ: any, onAcquire: any }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5 }}
-    viewport={{ once: true }}
-    className="bg-surface border border-border-subtle rounded-3xl overflow-hidden shadow-soft-float hover:shadow-hover-lift transition-all group"
-  >
-    <div className="aspect-video relative overflow-hidden">
-      <div className="absolute inset-0 bg-brand/10 group-hover:bg-brand/20 transition-colors" />
-      <div className="absolute top-4 left-4 flex gap-2">
-         {project.authorized && (
-            <span className="flex items-center gap-1 bg-success/10 text-success text-[10px] font-bold px-2 py-1 rounded-full backdrop-blur-md border border-success/20">
-               <Shield size={12} /> Article 6.2
-            </span>
-         )}
-         <span className="bg-white/80 text-foreground text-[10px] font-bold px-2 py-1 rounded-full backdrop-blur-md">
-            {project.vintage}
-         </span>
-      </div>
-    </div>
-    
-    <div className="p-6">
-      <div className="flex justify-between items-start mb-1">
-         <p className="label-meta uppercase tracking-wider">{project.id}</p>
-         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm border ${project.riskScore?.startsWith('A') ? 'text-success border-success/20' : 'text-brand border-brand/20'}`}>
-            Risk: {project.riskScore}
-         </span>
-      </div>
-      <h3 className="card-h3 mb-2 group-hover:text-brand transition-colors line-clamp-1">{project.name}</h3>
-      <p className="text-xs text-muted-text mb-6 line-clamp-1">{project.methodology}</p>
-      
-      <div className="flex justify-between items-end mb-6">
-        <div>
-          <p className="label-meta text-[11px] mb-1 uppercase tracking-tighter">Available</p>
-          <p className="font-bold text-accent">{project.available}</p>
-        </div>
-        <div className="text-right">
-          <p className="label-meta text-[11px] mb-1 uppercase tracking-tighter">Price</p>
-          <p className="text-xl font-bold text-brand">{project.price}</p>
-        </div>
-      </div>
-      
-      <div className="pt-6 border-t border-border-subtle flex flex-col gap-3">
-        <Button 
-          className="w-full py-4 text-xs flex items-center justify-center gap-2"
-          onClick={onAcquire}
-        >
-          Acquire Instant <Zap size={14} />
-        </Button>
-        <button 
-          onClick={onRFQ}
-          className="w-full py-4 text-[10px] font-bold uppercase tracking-widest text-muted-text hover:text-brand flex items-center justify-center gap-2 transition-colors border border-dashed border-border-subtle rounded-2xl"
-        >
-          Institutional RFQ <MessageSquare size={14} />
-        </button>
-      </div>
-    </div>
-  </motion.div>
-);
-
-export default function MarketplacePage() {
-  const [filter, setFilter] = useState("All");
-  const [rfqProject, setRfqProject] = useState<any>(null);
-  const [toast, setToast] = useState<{message: string, isVisible: boolean}>({ message: "", isVisible: false });
-
-  const showToast = (msg: string) => {
-    setToast({ message: msg, isVisible: true });
-    setTimeout(() => setToast({ message: "", isVisible: false }), 4000);
-  };
-
-  const projects = [
-    {
-      id: "BHU-RE-2023-001",
-      name: "Wangdue Hydropower Offset",
-      vintage: 2023,
-      methodology: "Renewable Energy (ACM0002)",
-      authorized: true,
-      available: "15,420 tCO2e",
-      price: "$18.50",
-      image: "/images/project-hydro.png",
-      riskScore: "A+",
-      coBenefits: ["SDG 7", "SDG 13", "SDG 17"]
-    },
-    {
-      id: "BHU-BIO-2024-004",
-      name: "Phobjikha Conservation Project",
-      vintage: 2024,
-      methodology: "Avoidance/Removal (Nature-Based)",
-      authorized: false,
-      available: "120,000 tCO2e",
-      price: "$24.00",
-      image: "/images/project-forest.png",
-      riskScore: "A",
-      coBenefits: ["SDG 15", "SDG 8", "SDG 1"]
-    },
-    {
-      id: "BHU-FOR-2023-009",
-      name: "Gelephu Forestation Initiative",
-      vintage: 2023,
-      methodology: "Reforestation (AR-ACM0003)",
-      authorized: true,
-      available: "45,000 tCO2e",
-      price: "$22.50",
-      image: "/images/project-forest.png",
-      riskScore: "A+",
-      coBenefits: ["SDG 13", "SDG 15", "SDG 6"]
-    },
-    {
-      id: "BHU-RE-2022-012",
-      name: "Trongsa Biomass Energy",
-      vintage: 2022,
-      methodology: "Methane Avoidance",
-      authorized: true,
-      available: "8,500 tCO2e",
-      price: "$16.75",
-      image: "/images/project-hydro.png",
-      riskScore: "B+",
-      coBenefits: ["SDG 7", "SDG 9"]
-    },
-  ];
+export default async function MarketplacePage() {
+  const result = await getMarketplaceProjects();
+  const projects = result.success && result.data && result.data.length > 0 
+    ? result.data 
+    : fallbackProjects;
 
   return (
     <main className="min-h-screen bg-background relative overflow-hidden">
@@ -254,44 +73,15 @@ export default function MarketplacePage() {
                className="body-primary"
              >
                Browse and acquire sovereign carbon credits directly from Bhutan's national registry. All assets are CAD Trust synchronized and Article 6 compliant.
+               {result.source === "SUPABASE" && (
+                 <span className="block mt-2 text-xs text-brand font-bold uppercase tracking-widest">
+                   ● Powered by High-Performance Sovereign Indexer
+                 </span>
+               )}
              </motion.p>
           </div>
 
-          {/* Filters and Search Bar */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex flex-col md:flex-row gap-4 items-center mb-12"
-          >
-            <div className="relative flex-1 group w-full">
-               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-tertiary-text group-focus-within:text-brand transition-colors" size={20} />
-               <input
-                 type="text"
-                 placeholder="Search by Project ID, Methodology or Name..."
-                 className="w-full pl-12 pr-4 py-4 bg-surface border border-border-subtle rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all text-foreground shadow-sm"
-               />
-            </div>
-            
-            <div className="flex gap-4 w-full md:w-auto">
-               <div className="relative flex-1 md:flex-none">
-                  <select
-                    className="w-full appearance-none bg-surface border border-border-subtle px-6 py-4 rounded-2xl text-sm font-medium pr-12 focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer shadow-sm"
-                    onChange={(e) => setFilter(e.target.value)}
-                  >
-                    <option>All Methodologies</option>
-                    <option>Nature-Based</option>
-                    <option>Renewable Energy</option>
-                    <option>Methane Avoidance</option>
-                  </select>
-                  <Filter className="absolute right-4 top-1/2 -translate-y-1/2 text-tertiary-text pointer-events-none" size={18} />
-               </div>
-               
-               <Button variant="secondary" className="px-6 py-4 rounded-2xl flex gap-2 items-center text-sm shadow-sm bg-surface hover:bg-surface/80">
-                  <ArrowUpDown size={18} /> Sort
-               </Button>
-            </div>
-          </motion.div>
+          <MarketplaceClient initialProjects={projects} />
         </div>
       </section>
 
@@ -320,142 +110,26 @@ export default function MarketplacePage() {
                  </div>
               </div>
               
-              {/* Premium Glassmorphic Price Chart */}
               <div className="h-64 md:h-80 w-full bg-background/50 rounded-3xl border border-border-subtle relative flex items-end px-3 sm:px-6 pb-6 pt-16 gap-1 sm:gap-3 overflow-hidden shadow-inner isolate">
-                 {/* Gradient Overlay */}
                  <div className="absolute inset-0 bg-linear-to-t from-brand/10 via-brand/5 to-transparent pointer-events-none -z-10" />
-                 
-                 {/* Grid lines */}
                  <div className="absolute inset-0 pointer-events-none flex flex-col justify-between py-6 px-6 opacity-20 -z-10">
                     {[1,2,3,4].map(i => <div key={i} className="border-b border-dashed border-accent w-full flex-1" />)}
                  </div>
 
-                 {[40, 55, 45, 60, 50, 75, 65, 85, 80, 95, 85, 100].map((h, i) => {
-                    const price = (19.50 * (1 + i/100)).toFixed(2);
-                    return (
-                      <motion.div
-                         key={i}
-                         initial={{ height: 0, opacity: 0 }}
-                         whileInView={{ height: `${h}%`, opacity: 1 }}
-                         viewport={{ once: true }}
-                         transition={{ duration: 1.2, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
-                         className="flex-1 rounded-t-xl group relative cursor-pointer"
-                      >
-                         {/* Bar Body */}
-                         <div className="absolute inset-x-0 bottom-0 top-0 bg-linear-to-t from-brand/80 to-brand-soft rounded-t-xl opacity-60 group-hover:opacity-100 transition-all shadow-[0_4px_20px_rgba(76,151,216,0.1)] group-hover:shadow-[0_4px_25px_rgba(76,151,216,0.4)]" />
-                         
-                         {/* Bar Cap Highlights */}
-                         <div className="absolute top-0 inset-x-0 h-1 bg-white/40 rounded-t-xl" />
-
-                         {/* Premium Tooltip */}
-                         <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-surface backdrop-blur-xl border border-border-subtle text-foreground text-xs px-4 py-2 rounded-2xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap shadow-shadow-lift z-20 font-bold scale-90 group-hover:scale-100 flex items-center gap-2">
-                            <span className="font-mono">${price}</span>
-                            <span className="text-success font-medium text-[10px] bg-success/10 px-1.5 py-0.5 rounded-sm">+{i}%</span>
-                            
-                            {/* Tooltip Triangle */}
-                            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-surface border-b border-r border-border-subtle rotate-45" />
-                         </div>
-                      </motion.div>
-                    );
-                 })}
+                 {[40, 55, 45, 60, 50, 75, 65, 85, 80, 95, 85, 100].map((h, i) => (
+                    <div
+                       key={i}
+                       style={{ height: `${h}%` }}
+                       className="flex-1 rounded-t-xl group relative cursor-pointer"
+                    >
+                       <div className="absolute inset-x-0 bottom-0 top-0 bg-linear-to-t from-brand/80 to-brand-soft rounded-t-xl opacity-60 group-hover:opacity-100 transition-all shadow-[0_4px_20px_rgba(76,151,216,0.1)] group-hover:shadow-[0_4px_25px_rgba(76,151,216,0.4)]" />
+                       <div className="absolute top-0 inset-x-0 h-1 bg-white/40 rounded-t-xl" />
+                    </div>
+                 ))}
               </div>
            </div>
         </div>
       </section>
-
-      {/* Market Segments */}
-      <section className="pb-24">
-        <div className="container mx-auto px-6">
-           <div className="flex gap-4 mb-12 overflow-x-auto pb-4 scrollbar-hide">
-              <button 
-                onClick={() => setFilter("All")}
-                className={`px-8 py-3 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${filter === 'All' ? 'bg-accent text-white border-accent shadow-md' : 'bg-surface text-muted-text border-border-subtle hover:bg-surface/80'}`}
-              >
-                Individual Vintages
-              </button>
-              <button 
-                onClick={() => setFilter("Pools")}
-                className={`px-8 py-3 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${filter === 'Pools' ? 'bg-accent text-white border-accent shadow-md' : 'bg-surface text-muted-text border-border-subtle hover:bg-surface/80'}`}
-              >
-                ERC-20 Carbon Pools
-              </button>
-              <button className="px-8 py-3 rounded-2xl text-xs font-bold whitespace-nowrap border border-border-subtle text-muted-text/50 bg-background cursor-not-allowed">
-                Forward Contracts (Q4)
-              </button>
-           </div>
-
-           {filter === "Pools" ? (
-             <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                className="grid grid-cols-1 md:grid-cols-2 gap-8"
-             >
-                {projectPools.map((pool) => (
-                  <div key={pool.id} className="bg-surface border border-border-subtle p-8 md:p-10 rounded-[40px] shadow-soft-float relative overflow-hidden group hover:border-brand/40 transition-all hover:shadow-shadow-lift">
-                     <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand/5 rounded-full blur-3xl group-hover:bg-brand/10 transition-colors" />
-                     <div className="flex flex-col xl:flex-row justify-between items-start mb-8 gap-4">
-                        <div>
-                           <span className="text-[10px] font-bold uppercase tracking-widest text-brand bg-brand/10 px-3 py-1.5 rounded-full mb-4 inline-block border border-brand/20">
-                              Liquidity Segment
-                           </span>
-                           <h3 className="text-2xl font-bold text-accent mb-2">{pool.name}</h3>
-                           <p className="text-sm text-muted-text">Constituent Vintages: <span className="font-semibold text-foreground">{pool.vintages}</span></p>
-                        </div>
-                        <div className="text-xl md:text-2xl font-bold text-brand bg-background px-6 py-3 rounded-2xl border border-border-subtle shadow-sm font-mono tracking-tight">
-                           ${pool.symbol}
-                        </div>
-                     </div>
-                     
-                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 mb-10 pb-10 border-b border-border-subtle">
-                        <div>
-                           <p className="label-meta text-[10px] mb-1">Liquidity (TVL)</p>
-                           <p className="font-bold text-accent font-mono">{pool.liquidity}</p>
-                        </div>
-                        <div>
-                           <p className="label-meta text-[10px] mb-1">Daily Volume</p>
-                           <p className="font-bold text-accent font-mono">{pool.volume}</p>
-                        </div>
-                        <div className="sm:text-right hidden sm:block">
-                           <p className="label-meta text-[10px] mb-1">Standard</p>
-                           <p className="font-bold text-brand">{pool.tokens}</p>
-                        </div>
-                     </div>
-
-                     <div className="flex flex-col sm:flex-row gap-4">
-                        <Button className="flex-1 py-5 flex items-center justify-center gap-2 bg-accent text-white shadow-md">
-                           Trade on DEX <ExternalLink size={16} />
-                        </Button>
-                        <Button variant="secondary" className="flex-1 py-5 flex items-center justify-center gap-2 bg-surface hover:bg-surface/80">
-                           Mint / Redeem <Shield size={16} />
-                        </Button>
-                     </div>
-                  </div>
-                ))}
-             </motion.div>
-           ) : (
-             <motion.div 
-               initial={{ opacity: 0 }} 
-               animate={{ opacity: 1 }}
-               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-             >
-               {projects.map((project) => (
-                 <ProjectCard 
-                   key={project.id} 
-                   project={project} 
-                   onRFQ={() => setRfqProject(project)} 
-                   onAcquire={() => showToast(`Initiating acquisition workflow for ${project.id}. Institutional verification required.`)}
-                 />
-               ))}
-              </motion.div>
-           )}
-        </div>
-      </section>
-
-      <RFQModal 
-        isOpen={!!rfqProject} 
-        onClose={() => setRfqProject(null)} 
-        project={rfqProject} 
-      />
 
       {/* Info Section about Compliance */}
       <section className="bg-accent py-24 text-white">
@@ -511,28 +185,12 @@ export default function MarketplacePage() {
                       ))}
                     </ul>
                  </div>
-                 {/* Decorative floaters */}
                  <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand/30 blur-3xl rounded-full -z-10" />
                  <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 blur-3xl rounded-full -z-10" />
               </div>
            </div>
         </div>
       </section>
-
-      {/* Toast Notification */}
-      {toast.isVisible && (
-         <motion.div 
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed bottom-8 right-8 z-50 bg-surface border border-brand/20 shadow-shadow-lift rounded-2xl p-4 flex items-center gap-4 max-w-sm"
-         >
-            <div className="bg-brand/10 p-2 rounded-full text-brand">
-               <Info size={20} />
-            </div>
-            <p className="text-sm font-medium pr-4">{toast.message}</p>
-         </motion.div>
-      )}
     </main>
   );
 }
