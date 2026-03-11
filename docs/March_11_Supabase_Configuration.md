@@ -54,16 +54,16 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 # Database (Settings -> Database -> Connection String -> Mode: Transaction)
 DATABASE_URL="postgres://postgres.your-project-id:your-password@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
 
-# Blockchain Relay (From your previous config)
-PRIV_KEY=0x...
-NEXT_PUBLIC_RPC_URL=https://...
-NEXT_PUBLIC_REGISTRY_ADDRESS=0x82aCd7688482618D80dF2c159847144eCDB12fD7
+# Blockchain Relay (From your previous config - Optional as app has public fallbacks for dev)
+# PRIV_KEY=0x...
+# NEXT_PUBLIC_RPC_URL=https://rpc-amoy.polygon.technology
 ```
 
 ---
 
 ## 💡 Pro-Tips for Testing Today:
 
+*   **Wallet Extension Error Fix**: If you were seeing `chrome.runtime.sendMessage` errors, I have cleaned up the project by removing the conflicting `@metamask/sdk` and providing solid RPC fallbacks. The site should now load cleanly even without local environment variables.
 *   **Registry Sync:** Log into the Admin Dashboard (`/dashboard/admin`) and click "Run Marketplace Sync". This will read the Polygon Amoy testnet and populate your Supabase database with carbon projects.
 *   **RFQ Submission:** Go to the Marketplace, find a project, and click "Institutional RFQ". Enter a volume (e.g., 50,000) and submit. You can then see your active quote in the **Registry Dashboard** under "Active Quote Requests".
 *   **Dev Mode Safety:** If you haven't set up the variables yet, the site will **not crash**. I have implemented safeguards that print warnings in the console but keep the UI functional using fallback data.

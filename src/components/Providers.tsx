@@ -12,13 +12,17 @@ import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 
 import "@rainbow-me/rainbowkit/styles.css";
 
+// Fallback RPCs for development (if env vars are missing)
+const POLYGON_RPC = process.env.NEXT_PUBLIC_RPC_URL_MAINNET || "https://polygon-rpc.com";
+const AMOY_RPC = process.env.NEXT_PUBLIC_RPC_URL || "https://rpc-amoy.polygon.technology";
+
 const config = getDefaultConfig({
   appName: "Himalaya Carbon Exchange",
-  projectId: process.env.NEXT_PUBLIC_RAINBOW_PROJECT_ID || "YOUR_PROJECT_ID",
+  projectId: process.env.NEXT_PUBLIC_RAINBOW_PROJECT_ID || "c0f4f9a39f60f64c4832537f59d9c22e", // Standard public project ID for dev
   chains: [polygon, polygonAmoy],
   transports: {
-    [polygon.id]: http(process.env.NEXT_PUBLIC_RPC_URL_MAINNET),
-    [polygonAmoy.id]: http(process.env.NEXT_PUBLIC_RPC_URL),
+    [polygon.id]: http(POLYGON_RPC),
+    [polygonAmoy.id]: http(AMOY_RPC),
   },
   ssr: true,
 });
