@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { cn } from "@/app/utils";
 import { ClipboardList, Clock3, CreditCard, Users } from "lucide-react";
+import { ScrollReveal } from "./ScrollReveal";
 
 interface CardProps {
   title: string;
@@ -45,23 +46,21 @@ const cards: CardProps[] = [
 
 const BentoCard = ({ title, description, icon: Icon, className, delay = 0 }: CardProps) => {
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, delay }}
-      whileHover={{ y: -10, boxShadow: "var(--shadow-lift)" }}
-      className={cn(
-        "bg-surface rounded-3xl p-8 shadow-soft-float border border-border-subtle flex flex-col items-start transition-all cursor-default",
-        className
-      )}
-    >
-      <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-soft text-brand">
-        <Icon size={24} aria-hidden="true" />
-      </div>
-      <h3 className="card-h3 text-foreground mb-4">{title}</h3>
-      <p className="text-muted-text text-lg leading-[1.6]">{description}</p>
-    </motion.article>
+    <ScrollReveal delay={delay} direction="up" distance={30}>
+      <motion.article
+        whileHover={{ y: -10, boxShadow: "var(--shadow-lift)" }}
+        className={cn(
+          "bg-surface rounded-[32px] p-8 shadow-soft-float border border-border-subtle flex flex-col items-start transition-all cursor-default h-full",
+          className
+        )}
+      >
+        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-soft text-brand ring-8 ring-brand/5">
+          <Icon size={28} aria-hidden="true" />
+        </div>
+        <h3 className="card-h3 text-foreground mb-4">{title}</h3>
+        <p className="text-muted-text text-lg leading-[1.6] font-light">{description}</p>
+      </motion.article>
+    </ScrollReveal>
   );
 };
 
@@ -69,14 +68,16 @@ export const BentoGrid = () => {
   return (
     <section id="templates" aria-labelledby="templates-heading" className="section-space bg-secondary-bg/55">
       <div className="container mx-auto px-6">
-        <div className="mb-20 text-center">
-          <h2 id="templates-heading" className="section-h2 text-foreground mb-6">
-            Engineered for sovereign carbon infrastructure
-          </h2>
-          <p className="body-primary max-w-2xl mx-auto">
-            The core building blocks reflect the regulatory, interoperability, and market design references captured across the project documents.
-          </p>
-        </div>
+        <ScrollReveal direction="up" distance={40}>
+          <div className="mb-20 text-center">
+            <h2 id="templates-heading" className="section-h2 text-foreground mb-6">
+              Engineered for sovereign carbon infrastructure
+            </h2>
+            <p className="body-primary max-w-2xl mx-auto">
+              The core building blocks reflect the regulatory, interoperability, and market design references captured across the project documents.
+            </p>
+          </div>
+        </ScrollReveal>
         
         <div className="grid grid-cols-1 gap-6 auto-rows-auto md:grid-cols-2 md:gap-8">
           {cards.map((card) => (

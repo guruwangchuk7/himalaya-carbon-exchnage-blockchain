@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "./Button";
 import Image from "next/image";
 import { cn } from "@/app/utils";
+import { ScrollReveal } from "./ScrollReveal";
 
 interface FeatureProps {
   title: string;
@@ -37,49 +38,41 @@ const FeatureSection = ({ title, subtitle, description, media, reversed }: Featu
         reversed ? "md:flex-row-reverse" : ""
       )}
     >
-      <motion.div
-        initial={{ opacity: 0, x: reversed ? 50 : -50 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className="flex-1 w-full"
-      >
-        <div className="relative rounded-[24px] overflow-hidden shadow-soft-float border border-border-subtle bg-surface">
-          <Image
-            src={media}
-            alt={title}
-            width={700}
-            height={450}
-            className="w-full h-auto object-cover hover:scale-105 transition-transform duration-700"
-          />
-        </div>
-      </motion.div>
+      <div className="flex-1 w-full">
+        <ScrollReveal direction="up" distance={50}>
+          <div className="relative rounded-[32px] overflow-hidden shadow-soft-float border border-border-subtle bg-surface">
+            <Image
+              src={media}
+              alt={title}
+              width={700}
+              height={450}
+              className="w-full h-auto object-cover hover:scale-105 transition-transform duration-700"
+            />
+          </div>
+        </ScrollReveal>
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-        className="flex-1 text-left max-w-xl"
-      >
-        <span className="text-sm font-semibold text-brand uppercase tracking-widest block mb-4">
-          {subtitle}
-        </span>
-        <h2 className="section-h2 text-foreground mb-6">
-          {title}
-        </h2>
-        <p className="body-primary mb-10">
-          {description}
-        </p>
-        <Button
-          href="#templates"
-          variant="secondary"
-          className="border border-border-subtle"
-          aria-label={`Explore infrastructure for ${title}`}
-        >
-          Explore infrastructure
-        </Button>
-      </motion.div>
+      <div className="flex-1 text-left max-w-xl">
+        <ScrollReveal direction="up" distance={40} delay={0.2}>
+          <span className="text-sm font-semibold text-brand uppercase tracking-widest block mb-4">
+            {subtitle}
+          </span>
+          <h2 className="section-h2 text-foreground mb-6">
+            {title}
+          </h2>
+          <p className="body-primary mb-10">
+            {description}
+          </p>
+          <Button
+            href="/architecture"
+            variant="secondary"
+            className="border border-border-subtle"
+            aria-label={`Explore infrastructure for ${title}`}
+          >
+            Explore infrastructure
+          </Button>
+        </ScrollReveal>
+      </div>
     </article>
   );
 };

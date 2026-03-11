@@ -5,6 +5,7 @@ import { cn } from "@/app/utils";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { useId, useState } from "react";
+import { ScrollReveal } from "./ScrollReveal";
 
 type AccessStage = "sandbox" | "production";
 
@@ -113,10 +114,6 @@ function AccessCard({ plan, stage, index }: { plan: Plan; stage: AccessStage; in
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.55, delay: index * 0.08 }}
       whileHover={{ y: -8, boxShadow: "var(--shadow-lift)" }}
       className={cn(
         "relative flex h-full flex-col rounded-[24px] border border-border-subtle bg-surface p-8 shadow-soft-float md:p-10",
@@ -186,29 +183,29 @@ export function Pricing() {
   return (
     <section id="pricing" aria-labelledby="pricing-heading" className="section-space bg-background">
       <div className="container mx-auto px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="mb-12 text-center md:mb-16"
-        >
-          <p className="label-meta mb-4 uppercase tracking-[0.18em] text-brand">Ecosystem Access</p>
-          <h2 id="pricing-heading" className="section-h2 mb-4 text-foreground">
-            Purpose-built portals for every participant
-          </h2>
-          <p className="body-primary mx-auto max-w-2xl">
-            Whether you are auditing proof of reserve, trading carbon pools, or managing the national registry bridge, Himalaya Carbon provides a focused workflow for your compliance needs.
-          </p>
-        </motion.div>
+        <ScrollReveal direction="up" distance={40}>
+          <div className="mb-12 text-center md:mb-16">
+            <p className="label-meta mb-4 uppercase tracking-[0.18em] text-brand">Ecosystem Access</p>
+            <h2 id="pricing-heading" className="section-h2 mb-4 text-foreground">
+              Purpose-built portals for every participant
+            </h2>
+            <p className="body-primary mx-auto max-w-2xl">
+              Whether you are auditing proof of reserve, trading carbon pools, or managing the national registry bridge, Himalaya Carbon provides a focused workflow for your compliance needs.
+            </p>
+          </div>
+        </ScrollReveal>
 
-        <div className="mb-10 flex justify-center">
-          <AccessToggle value={stage} onChange={setStage} />
-        </div>
+        <ScrollReveal direction="up" delay={0.1} distance={20}>
+          <div className="mb-10 flex justify-center">
+            <AccessToggle value={stage} onChange={setStage} />
+          </div>
+        </ScrollReveal>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {plans.map((plan, index) => (
-            <AccessCard key={plan.name} plan={plan} stage={stage} index={index} />
+            <ScrollReveal key={plan.name} delay={index * 0.1} direction="up" distance={30}>
+              <AccessCard plan={plan} stage={stage} index={index} />
+            </ScrollReveal>
           ))}
         </div>
       </div>
