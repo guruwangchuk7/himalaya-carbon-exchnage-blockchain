@@ -50,9 +50,9 @@ export const Navbar = () => {
             <ConnectButton accountStatus="avatar" chainStatus="icon" showBalance={false} />
           </div>
           <Button
-            href="#subscribe"
+            href="/dashboard"
             className="px-5 py-2 text-sm"
-            aria-label="Request platform access"
+            aria-label="Access registry dashboard"
           >
             Access registry
           </Button>

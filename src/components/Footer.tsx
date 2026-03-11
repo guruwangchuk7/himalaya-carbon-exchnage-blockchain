@@ -12,14 +12,14 @@ export const Footer = () => (
             <div className="w-10 h-10 rounded-full bg-brand overflow-hidden" />
             <span className="font-bold text-xl tracking-tight text-white">Himalaya Carbon</span>
           </div>
-          <p className="text-gray-400 max-w-60">
+          <p className="text-gray-300 max-w-60">
             Sovereign market infrastructure for Bhutan&apos;s carbon registry, exchange workflows, and cross-border participation.
           </p>
         </section>
         
         <section aria-label="Platform links">
-          <h4 className="font-bold mb-8 uppercase text-xs tracking-widest text-gray-500">Platform</h4>
-          <ul className="space-y-4 text-gray-400">
+          <h4 className="font-bold mb-8 uppercase text-xs tracking-widest text-gray-400">Platform</h4>
+          <ul className="space-y-4 text-gray-300">
             <li><a href="/dashboard" className="hover:text-white transition-colors">Registry dashboard</a></li>
             <li><a href="/marketplace" className="hover:text-white transition-colors">Project marketplace</a></li>
             <li><a href="#templates" className="hover:text-white transition-colors">Infrastructure</a></li>
@@ -28,8 +28,8 @@ export const Footer = () => (
         </section>
         
         <section aria-label="Resource links">
-          <h4 className="font-bold mb-8 uppercase text-xs tracking-widest text-gray-500">Resources</h4>
-          <ul className="space-y-4 text-gray-400">
+          <h4 className="font-bold mb-8 uppercase text-xs tracking-widest text-gray-400">Resources</h4>
+          <ul className="space-y-4 text-gray-300">
             <li><a href="/docs/prd.pdf" target="_blank" className="hover:text-white transition-colors">PRD brief</a></li>
             <li><a href="/docs/resportcarbon.pdf" target="_blank" className="hover:text-white transition-colors">Carbon report</a></li>
             <li><a href="/docs/techstack.pdf" target="_blank" className="hover:text-white transition-colors">Tech stack</a></li>
@@ -38,8 +38,8 @@ export const Footer = () => (
         </section>
         
         <section id="subscribe" aria-label="Subscribe">
-          <h4 className="font-bold mb-8 uppercase text-xs tracking-widest text-gray-500">Updates</h4>
-          <p className="text-gray-400 mb-6">Request updates on sandbox cohorts, registry integrations, and market launch milestones.</p>
+          <h4 className="font-bold mb-8 uppercase text-xs tracking-widest text-gray-400">Updates</h4>
+          <p className="text-gray-300 mb-6">Request updates on sandbox cohorts, registry integrations, and market launch milestones.</p>
           <form
             className="flex bg-white/10 rounded-full p-1 border border-white/20"
             onSubmit={(e) => {
@@ -65,7 +65,7 @@ export const Footer = () => (
         </section>
       </div>
       
-      <div className="pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6 text-gray-500 text-sm">
+      <div className="pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6 text-gray-400 text-sm">
         <p>(c) 2026 Himalaya Carbon Exchange. All rights reserved.</p>
         <div className="flex gap-10">
           <a href="#" className="hover:text-white" onClick={(e) => { e.preventDefault(); alert("Privacy Policy coming soon."); }}>Privacy Policy</a>

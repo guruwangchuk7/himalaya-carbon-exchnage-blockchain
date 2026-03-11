@@ -149,7 +149,7 @@ export default function DashboardPage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-brand/20 blur-3xl rounded-full -z-10" />
               <div className="relative z-10">
                  <h2 className="text-2xl font-bold mb-4">Market Liquidity</h2>
-                 <p className="text-gray-400 text-sm mb-10 leading-relaxed">
+                 <p className="text-gray-200 text-sm mb-10 leading-relaxed">
                    Manage your position in authorized carbon pools. Direct integration with Uniswap V3 for seamless exit and entry.
                  </p>
                  <div className="space-y-4">
@@ -160,10 +160,10 @@ export default function DashboardPage() {
                        Access Carbon Pools <Zap size={18} />
                     </Button>
                     <div className="grid grid-cols-2 gap-3">
-                       <Button variant="secondary" className="border-white/20 text-white flex items-center justify-center gap-2 py-4">
+                       <Button variant="secondary" className="bg-white/10 hover:bg-white/20 border-0 text-white flex items-center justify-center gap-2 py-4">
                           Swap <RefreshCcw size={16} />
                        </Button>
-                       <Button variant="secondary" className="border-white/20 text-white flex items-center justify-center gap-2 py-4">
+                       <Button variant="secondary" className="bg-white/10 hover:bg-white/20 border-0 text-white flex items-center justify-center gap-2 py-4">
                           Pool <Database size={16} />
                        </Button>
                     </div>

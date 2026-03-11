@@ -50,11 +50,11 @@ export const Hero = () => {
           className="max-w-3xl flex flex-col items-center gap-8"
         >
           <h1 id="hero-heading" className="display-h1 text-foreground">
-            Build Bhutan&apos;s sovereign<br className="hidden md:block" />
-            carbon market rails
+            Sovereign Market<br className="hidden md:block" />
+            Infrastructure Layer
           </h1>
           <p className="body-primary max-w-150">
-            Registry-grade infrastructure for carbon issuance, interoperability, and market access. Align national climate policy, CAD Trust-ready data flows, and exchange participation in one platform.
+            Himalaya Carbon Engine integrates Bhutan's National Registry with global liquidity. Establish registry-grade cryptographic proof of impact with CAD Trust synchronization, secure minting relayers, and ERC-20 Carbon Pools.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button

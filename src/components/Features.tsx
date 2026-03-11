@@ -15,15 +15,15 @@ interface FeatureProps {
 
 const features: FeatureProps[] = [
   {
-    subtitle: "National registry alignment",
-    title: "Connect sovereign carbon records to market-ready workflows",
-    description: "Structure issuance, retirement, and audit trails around national registry needs while preparing datasets for CAD Trust-style interoperability and downstream exchange use.",
+    subtitle: "Registry Bridge & Synchronization",
+    title: "Secure Minting Relayer & Carbon Lock",
+    description: "Our secure API layer receives authenticated signals from the National Registry to trigger on-chain ERC-1155 issuance programmatically, using cryptographic HSM integrations and rigid Zod validation.",
     media: "/images/mock-invoice.svg",
   },
   {
-    subtitle: "Cross-border readiness",
-    title: "Move from bilateral cooperation to transparent market execution",
-    description: "Support Article 6-style market participation with clear project metadata, compliance checkpoints, and settlement pathways that are easier for buyers, agencies, and operators to trust.",
+    subtitle: "Global Harmonization",
+    title: "CAD Trust Synchronization Engine",
+    description: "Every carbon credit lifecycle event synchronizes automatically with the Climate Action Data Trust decentralized gateway, enforcing cross-border double-counting prevention and global transparency.",
     media: "/images/mock-payments.svg",
     reversed: true,
   },

@@ -28,34 +28,34 @@ type Plan = {
 
 const plans: Plan[] = [
   {
-    name: "Observer",
-    description: "For ministries, advisors, and market stakeholders reviewing the ecosystem.",
-    features: ["Policy and market overview", "Read-only registry views", "Pilot brief access"],
-    trend: { label: "Baseline access for ecosystem alignment", tone: "warning" },
+    name: "Public Auditors",
+    description: "For the public, external auditors, regulatory bodies, and media reviewing ecosystem integrity.",
+    features: ["Proof of reserve monitoring", "Transparent burn audit logs", "Reserve health index access"],
+    trend: { label: "Providing cryptographic proof of asset backing", tone: "warning" },
     stageCopy: {
-      sandbox: { headline: "Discovery access", sublabel: "Initial ecosystem review" },
-      production: { headline: "Policy oversight", sublabel: "Operational monitoring view" },
+      sandbox: { headline: "Public Proof", sublabel: "Initial ecosystem review" },
+      production: { headline: "Audit Layer", sublabel: "Operational monitoring view" },
     },
   },
   {
-    name: "Project Developer",
-    description: "For developers preparing projects for issuance, audit, and exchange participation.",
-    features: ["Project onboarding workflows", "Metadata and evidence submission", "Priority onboarding support"],
+    name: "Institutional Traders",
+    description: "For corporations, carbon offset seekers, and high-volume brokers.",
+    features: ["Individual ERC-1155 vintage trading", "ERC-20 Carbon Pool liquidity", "Institutional RFQ capabilities"],
     highlighted: true,
-    trend: { label: "Best fit for active issuance pipelines", tone: "success" },
+    trend: { label: "Best fit for live market fulfillment", tone: "success" },
     stageCopy: {
-      sandbox: { headline: "Pilot onboarding", sublabel: "Sandbox engagement" },
-      production: { headline: "Issuance readiness", sublabel: "Production rollout" },
+      sandbox: { headline: "DEX Testnet", sublabel: "Sandbox exchange" },
+      production: { headline: "Live Markets", sublabel: "Active trading & retirement" },
     },
   },
   {
-    name: "Market Operator",
-    description: "For registry operators, infrastructure partners, and institutional market participants.",
-    features: ["Custom permissions", "API and integration support", "Operational governance controls"],
-    trend: { label: "Built for production-scale coordination", tone: "success" },
+    name: "Sovereign Operators",
+    description: "For National Carbon Registry Officials and the Ministry of Energy.",
+    features: ["Secure minting relayer controls", "Institutional whitelist auth", "ITMO compliance monitoring"],
+    trend: { label: "Built for true national-scale governance", tone: "success" },
     stageCopy: {
-      sandbox: { headline: "Integration sandbox", sublabel: "Partner testing environment" },
-      production: { headline: "Operational controls", sublabel: "Live market operations" },
+      sandbox: { headline: "Admin SDK", sublabel: "Partner testing environment" },
+      production: { headline: "Master Switch", sublabel: "Live sovereign operations" },
     },
   },
 ];
@@ -193,12 +193,12 @@ export function Pricing() {
           transition={{ duration: 0.6 }}
           className="mb-12 text-center md:mb-16"
         >
-          <p className="label-meta mb-4 uppercase tracking-[0.18em] text-brand">Access models</p>
+          <p className="label-meta mb-4 uppercase tracking-[0.18em] text-brand">Ecosystem Access</p>
           <h2 id="pricing-heading" className="section-h2 mb-4 text-foreground">
-            Access paths for every participant
+            Purpose-built portals for every participant
           </h2>
           <p className="body-primary mx-auto max-w-2xl">
-            Compare sandbox entry with production-stage operating models for agencies, developers, and market operators without turning the section into commercial pricing.
+            Whether you are auditing proof of reserve, trading carbon pools, or managing the national registry bridge, Himalaya Carbon provides a focused workflow for your compliance needs.
           </p>
         </motion.div>
 
