@@ -18,12 +18,12 @@ export const publicClient = createPublicClient({
   transport: http(process.env.NEXT_PUBLIC_RPC_URL),
 });
 
-export const walletClient = account 
+export const walletClient = account
   ? createWalletClient({
-      account,
-      chain: polygonAmoy,
-      transport: http(process.env.NEXT_PUBLIC_RPC_URL),
-    })
+    account,
+    chain: polygonAmoy,
+    transport: http(process.env.NEXT_PUBLIC_RPC_URL),
+  })
   : null;
 
 /**
@@ -51,12 +51,12 @@ export async function mintFromRegistry(
     });
 
     const hash = await walletClient.writeContract(request);
-    
+
     process.stdout.write(`Mint transaction submitted: ${hash}\n`);
-    
+
     // Wait for confirmation to ensure state consistency
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
-    
+
     return {
       success: true,
       hash,
