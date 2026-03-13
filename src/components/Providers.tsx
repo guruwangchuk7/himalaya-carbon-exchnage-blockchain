@@ -33,8 +33,30 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
+    // Some wallet extensions (like Martian) incorrectly call chrome.runtime.sendMessage 
+    // from the webpage context without an extension ID. This shim prevents the 
+    // resulting Runtime TypeError which can block execution.
+    try {
+      // @ts-ignore
+      if (typeof window !== "undefined" && window.chrome?.runtime && !window.chrome.runtime.id) {
+        // @ts-ignore
+        const original = window.chrome.runtime.sendMessage;
+        // @ts-ignore
+        window.chrome.runtime.sendMessage = function (id: any, msg: any, opts: any, cb: any) {
+          if (typeof id !== "string") {
+            // Redirect the call or ignore if it's missing the required Extension ID
+            return;
+          }
+          return original.apply(this, [id, msg, opts, cb]);
+        };
+      }
+    } catch (e) {
+      /* ignore shim errors */
+    }
     setMounted(true);
   }, []);
+
+  if (!mounted) return null;
 
   return (
     <WagmiProvider config={config}>
@@ -45,13 +67,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             borderRadius: "large",
           })}
         >
-          {/* 
-             Only render children when mounted to prevent wallet extensions 
-             (like Phantom/MetaMask) from triggering errors during initial 
-             page load/hydration. Returns null initially to match server-side 
-             rendering state.
-          */}
-          {mounted ? children : null}
+          {children}
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Search, Filter, ArrowUpDown, Shield, Info, ExternalLink, BarChart3, MessageSquare, Zap, CheckCircle2 } from "lucide-react";
+import { Search, Filter, ArrowUpDown, Shield, Info, ExternalLink, BarChart3, MessageSquare, Zap, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/Button";
 import { useState } from "react";
 
@@ -101,6 +101,88 @@ const RFQModal = ({ isOpen, onClose, project }: any) => {
   );
 };
 
+const AcquisitionModal = ({ isOpen, onClose, project, onVerificationNeeded }: any) => {
+  const [amount, setAmount] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const handleAcquire = async () => {
+    setIsSubmitting(true);
+    try {
+      const { initiateAcquisition } = await import("@/lib/actions/market");
+      const result = await initiateAcquisition(project.id, parseInt(amount));
+      if (result.success) {
+        setSuccess(true);
+      } else if (result.error === "UNAUTHORIZED") {
+        onVerificationNeeded(result.message);
+        onClose();
+      } else {
+        alert(result.error || "Acquisition failed.");
+      }
+    } catch (e) {
+      alert("Acquisition failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-md bg-accent/20">
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-surface border border-border-subtle p-10 rounded-[48px] shadow-2xl max-w-lg w-full relative overflow-hidden"
+      >
+        {!success ? (
+          <>
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-3">
+              <Zap className="text-brand" /> Instant Acquisition
+            </h2>
+            <div className="bg-brand/5 p-4 rounded-2xl mb-8 border border-brand/10">
+               <p className="text-[10px] font-bold uppercase tracking-widest text-brand mb-1">Asset selected</p>
+               <p className="text-sm font-semibold text-accent">{project.name}</p>
+               <p className="text-xs text-muted-text">Standard: Article 6.2 ITMO</p>
+            </div>
+            
+            <div className="space-y-6">
+               <div>
+                  <label className="label-meta text-[10px] uppercase block mb-2">Acquisition Volume (tCO2e)</label>
+                  <input 
+                    type="number" 
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="Enter amount" 
+                    className="w-full bg-background border border-border-subtle rounded-2xl px-6 py-4 text-xl font-bold"
+                  />
+                  <p className="text-[10px] text-muted-text mt-2 italic">* Direct acquisition is limited to available liquidity in the national buffer pool.</p>
+               </div>
+               <Button 
+                onClick={handleAcquire} 
+                disabled={isSubmitting || !amount}
+                className="w-full py-5 bg-brand text-white flex items-center justify-center gap-2"
+               >
+                 {isSubmitting ? "Finalizing Transaction..." : "Confirm & Acquire"} <ExternalLink size={18} />
+               </Button>
+               <button onClick={onClose} className="w-full text-xs text-muted-text font-bold hover:text-accent transition-colors">Cancel</button>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-10">
+             <div className="inline-flex items-center justify-center p-6 bg-success/10 text-success rounded-full mb-8">
+                <CheckCircle2 size={48} />
+             </div>
+             <h2 className="text-2xl font-bold mb-4 text-accent">Transaction Authorized</h2>
+             <p className="text-sm text-muted-text mb-10">The settlement process has started. You can track this acquisition on the transparency dashboard once the on-chain mint is confirmed.</p>
+             <Button onClick={onClose} className="w-full py-4 bg-accent text-white rounded-2xl">Return to Market</Button>
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+};
+
 const ProjectCard = ({ project, onRFQ, onAcquire }: { project: any, onRFQ: any, onAcquire: any }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
@@ -165,11 +247,12 @@ const ProjectCard = ({ project, onRFQ, onAcquire }: { project: any, onRFQ: any, 
 export function MarketplaceClient({ initialProjects }: { initialProjects: any[] }) {
   const [filter, setFilter] = useState("All");
   const [rfqProject, setRfqProject] = useState<any>(null);
-  const [toast, setToast] = useState<{message: string, isVisible: boolean}>({ message: "", isVisible: false });
+  const [acquireProject, setAcquireProject] = useState<any>(null);
+  const [toast, setToast] = useState<{message: string, isVisible: boolean, type?: 'info' | 'error'}>({ message: "", isVisible: false });
 
-  const showToast = (msg: string) => {
-    setToast({ message: msg, isVisible: true });
-    setTimeout(() => setToast({ message: "", isVisible: false }), 4000);
+  const showToast = (msg: string, type: 'info' | 'error' = 'info') => {
+    setToast({ message: msg, isVisible: true, type });
+    setTimeout(() => setToast({ message: "", isVisible: false, type: 'info' }), 4000);
   };
 
   return (
@@ -289,7 +372,7 @@ export function MarketplaceClient({ initialProjects }: { initialProjects: any[] 
                  key={project.id} 
                  project={project} 
                  onRFQ={() => setRfqProject(project)} 
-                 onAcquire={() => showToast(`Initiating acquisition workflow for ${project.id}. Institutional verification required.`)}
+                 onAcquire={() => setAcquireProject(project)}
                />
              ))}
             </motion.div>
@@ -302,6 +385,13 @@ export function MarketplaceClient({ initialProjects }: { initialProjects: any[] 
         project={rfqProject} 
       />
 
+      <AcquisitionModal 
+        isOpen={!!acquireProject} 
+        onClose={() => setAcquireProject(null)} 
+        project={acquireProject} 
+        onVerificationNeeded={(msg: string) => showToast(msg, 'error')}
+      />
+
       {/* Toast Notification */}
       {toast.isVisible && (
          <motion.div 
@@ -310,12 +400,13 @@ export function MarketplaceClient({ initialProjects }: { initialProjects: any[] 
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             className="fixed bottom-8 right-8 z-50 bg-surface border border-brand/20 shadow-shadow-lift rounded-2xl p-4 flex items-center gap-4 max-w-sm"
          >
-            <div className="bg-brand/10 p-2 rounded-full text-brand">
-               <Info size={20} />
-            </div>
-            <p className="text-sm font-medium pr-4">{toast.message}</p>
+             <div className={`p-2 rounded-full ${toast.type === 'error' ? 'bg-red-500/10 text-red-500' : 'bg-brand/10 text-brand'}`}>
+                {toast.type === 'error' ? <AlertCircle size={20} /> : <Info size={20} />}
+             </div>
+             <p className="text-sm font-medium pr-4">{toast.message}</p>
          </motion.div>
       )}
     </div>
   );
 }
+
