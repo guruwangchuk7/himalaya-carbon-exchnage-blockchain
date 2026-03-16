@@ -53,7 +53,7 @@ export async function generateImpactCertificate(txHash: `0x${string}`): Promise<
     // 5. Mock CAD Trust Sync ID (In production, this comes from a real API call to CAD Trust)
     const cadSyncId = `CAD-BT-${Math.floor(Math.random() * 90000) + 10000}`;
 
-    return {
+    const certificate: ImpactCertificate = {
       certificateId,
       project: projectData.projectName || "Bhutan Sovereign Carbon Project",
       vintage: Number(projectData.vintageYear) || 2024,
@@ -64,8 +64,30 @@ export async function generateImpactCertificate(txHash: `0x${string}`): Promise<
       timestamp: new Date().toISOString(),
       sovereignSignature: "SIGNED_BY_HIMALAYA_CARBON_ENGINE",
     };
+
+    // 6. Persist to Database for long-term audit and verification
+    try {
+      const { prisma } = await import("@/lib/db/prisma");
+      await (prisma as any).certificate.create({
+        data: {
+          certificateId: certificate.certificateId,
+          projectId: projectData.projectID || "UNKNOWN",
+          projectName: certificate.project,
+          vintageYear: certificate.vintage,
+          amount: certificate.amount,
+          beneficiary: certificate.beneficiary,
+          retirementHash: certificate.retirementHash,
+          cadSyncId: certificate.cadSyncId,
+        }
+      });
+    } catch (dbError: any) {
+      process.stderr.write(`[WARNING] Certificate persistence failed: ${dbError.message}\n`);
+    }
+
+    return certificate;
   } catch (err: any) {
     process.stderr.write(`Certificate generation error: ${err.message}\n`);
     return null;
   }
 }
+

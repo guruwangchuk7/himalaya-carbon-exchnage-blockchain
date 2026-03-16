@@ -199,31 +199,51 @@ export async function initiateAcquisition(projectId: string, volume: number) {
 
 export async function getTransparencyLogs() {
   try {
-    const logs = await prisma.rFQ.findMany({
-      where: {
-        status: { in: ["MATCHED", "SETTLED_ON_CHAIN", "OPEN"] }
-      },
-      include: {
-        project: true
-      },
-      orderBy: { createdAt: "desc" },
-      take: 10
-    });
+    const [auditLogs, rfqs] = await Promise.all([
+      (prisma as any).auditLog.findMany({
+        orderBy: { timestamp: "desc" },
+        take: 10
+      }),
+      prisma.rFQ.findMany({
+        where: {
+          status: { in: ["MATCHED", "SETTLED_ON_CHAIN", "OPEN"] }
+        },
+        include: {
+          project: true
+        },
+        orderBy: { createdAt: "desc" },
+        take: 5
+      })
+    ]);
+
+    const mappedAuditLogs = auditLogs.map((log: any) => ({
+      event: log.action.replace(/_/g, " "),
+      proj: log.metadata.projectID || log.metadata.projectId || "Sovereign Registry",
+      val: log.metadata.amount ? `+${log.metadata.amount}` : "Verified",
+      time: log.timestamp,
+      status: "Verified"
+    }));
+
+    const mappedRFQs = rfqs.map(log => ({
+      event: log.status === "MATCHED" || log.status === "SETTLED_ON_CHAIN" ? "Market Sync" : "RFQ Log",
+      proj: log.project?.projectId || "BT-POOL",
+      val: `+${log.targetVolume}`,
+      time: log.createdAt,
+      status: log.status === "SETTLED_ON_CHAIN" ? "Success" : "Pending Sync"
+    }));
 
     return {
       success: true,
-      data: logs.map(log => ({
-        event: log.status === "MATCHED" || log.status === "SETTLED_ON_CHAIN" ? "Mint Sync" : "RFQ Log",
-        proj: log.project.projectId,
-        val: `+${log.targetVolume}`,
-        time: log.createdAt,
-        status: log.status === "SETTLED_ON_CHAIN" ? "Success" : "Pending Sync"
-      }))
+      data: [...mappedAuditLogs, ...mappedRFQs].sort((a, b) => 
+        new Date(b.time).getTime() - new Date(a.time).getTime()
+      ).slice(0, 10)
     };
   } catch (error: any) {
+    console.error("Transparency Log Error:", error);
     return { success: false, error: error.message };
   }
 }
+
 
 export async function getReserveStats() {
   try {

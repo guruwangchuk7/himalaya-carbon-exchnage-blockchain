@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db/prisma";
 
 /**
  * Institutional Market: Request for Quote (RFQ)
@@ -14,14 +15,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Incomplete RFQ parameters." }, { status: 400 });
     }
 
-    // Process RFQ (In production: Save to database for registry agents to review)
-    process.stdout.write(`Market RFQ: New high-volume request for ${projectId} from ${buyer} (${amount} units)...\n`);
+    // Persist RFQ to database for registry agents to review
 
-    const rfqId = `RFQ-BT-${Math.floor(Math.random() * 9000) + 1000}`;
+    const rfq = await prisma.rFQ.create({
+      data: {
+        buyerName: buyer,
+        projectId,
+        targetVolume: parseInt(amount),
+        targetPriceCents: targetPrice ? Math.round(parseFloat(targetPrice) * 100) : undefined,
+        purpose: purpose || undefined,
+        status: "OPEN"
+      }
+    });
+
+    process.stdout.write(`Market RFQ: New high-volume request for ${projectId} from ${buyer} (${amount} units) Saved to DB ID: ${rfq.id}\n`);
 
     return NextResponse.json({
       status: "Submitted",
-      rfqId,
+      rfqId: rfq.id,
       message: "Our sovereign brokers will review your quote request and contact you within 24 hours.",
       nextSteps: "Please ensure your institutional KYB is up-to-date in the dashboard.",
     });
@@ -31,3 +42,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to submit RFQ." }, { status: 500 });
   }
 }
+

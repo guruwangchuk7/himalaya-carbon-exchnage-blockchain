@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       process.stdout.write(`Registry Bridge: SUCCESSFULLY MINTED credits on-chain. TX: ${result.hash}\n`);
       
       // 5. Log Administrative Audit Action
-      HimalayaSecurity.logAuditAction("MINT_VINTAGE", { projectID: metadata.projectID, amount, hash: result.hash });
+      await HimalayaSecurity.logAuditAction("MINT_VINTAGE", { projectID: metadata.projectID, amount, hash: result.hash });
 
       return NextResponse.json({
         status: "Synchronized",

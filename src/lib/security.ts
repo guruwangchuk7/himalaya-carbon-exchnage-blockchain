@@ -24,7 +24,12 @@ export const RegistryMetadataSchema = z.object({
   })
 });
 
-const SHARED_SECRET = process.env.REGISTRY_BRIDGE_AUTH || "test-lock-token-2026";
+const SHARED_SECRET = (process.env.REGISTRY_BRIDGE_AUTH || (process.env.NODE_ENV === "production" ? "" : "dev-secret-only-for-local")) as string;
+
+if (!process.env.REGISTRY_BRIDGE_AUTH && process.env.NODE_ENV === "production") {
+  throw new Error("CRITICAL: REGISTRY_BRIDGE_AUTH secret is missing in production.");
+}
+
 
 export class HimalayaSecurity {
   /**
@@ -61,10 +66,27 @@ export class HimalayaSecurity {
   /**
    * Logs a Sovereign security event
    */
-  static logAuditAction(action: string, metadata: any) {
+  static async logAuditAction(action: string, metadata: any) {
     const timestamp = new Date().toISOString();
     const eventHash = crypto.createHash("sha256").update(JSON.stringify({ action, metadata, timestamp })).digest("hex");
     
+    // In production: Save to persistent audit log for accountability
+    try {
+      const { prisma } = await import("@/lib/db/prisma");
+      await (prisma as any).auditLog.create({
+        data: {
+          action,
+          metadata,
+          eventHash,
+          actorEmail: metadata.admin || null,
+          timestamp: new Date()
+        }
+      });
+    } catch (dbError: any) {
+      process.stderr.write(`[CRITICAL] Audit logging failed: ${dbError.message}\n`);
+    }
+
     process.stdout.write(`[SOVEREIGN-AUDIT] ${timestamp} | Action: ${action} | Hash: ${eventHash.slice(0, 12)}... | ID: ${metadata.projectID || 'SYSTEM'}\n`);
   }
 }
+
