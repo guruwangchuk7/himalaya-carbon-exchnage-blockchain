@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaMariaDb } from '@prisma/adapter-mariadb'
+import { PrismaPg } from '@prisma/adapter-pg'
+import pg from 'pg'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -11,14 +13,25 @@ if (!connectionString) {
   throw new Error('DATABASE_URL environment variable is not defined')
 }
 
-// In Prisma 7, we pass the connection through the adapter
-const adapter = new PrismaMariaDb(connectionString)
+let adapter: any
+const isPostgres = connectionString.startsWith('postgresql://') || connectionString.startsWith('postgres://')
 
-// In Prisma 7, settings are handled via driver adapters
+if (isPostgres) {
+  const pool = new pg.Pool({ 
+    connectionString,
+    ssl: connectionString.includes('supabase.com') ? { rejectUnauthorized: false } : false
+  })
+  adapter = new PrismaPg(pool as any)
+} else {
+  // Use MariaDB/MySQL adapter for MySQL connections
+  adapter = new PrismaMariaDb(connectionString)
+}
+
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     adapter,
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
