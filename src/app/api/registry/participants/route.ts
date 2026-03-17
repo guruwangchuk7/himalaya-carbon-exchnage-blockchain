@@ -3,10 +3,12 @@ import { z } from "zod";
 import { HimalayaSecurity } from "@/lib/security";
 import { walletClient, account, publicClient } from "@/lib/blockchain";
 import { REGISTRY_ABI, REGISTRY_ADDRESS } from "@/constants";
+import { prisma } from "@/lib/db/prisma";
 
 const ParticipantUpdateSchema = z.object({
   participantAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
   status: z.boolean(),
+  name: z.string().optional(),
 });
 
 /**
@@ -16,14 +18,18 @@ const ParticipantUpdateSchema = z.object({
  * authorized to trade and receive carbon credits.
  */
 export async function GET(request: Request) {
-  // Mock listing: In production, we'd fetch participants from an event indexer
-  const mockParticipants = [
-    { address: "0x8E285434FBe799a4c84433E78b179047144eCDB1", name: "National Bank of Bhutan", authorized: true },
-    { address: "0x7a2d48c087265882618D80dF2c159847144eCDB1", name: "Druk Green Power Corp", authorized: true },
-    { address: "0x123d48c087265882618D80dF2c159847144eCDB1", name: "Bhutan Carbon Fund", authorized: false },
-  ];
-
-  return NextResponse.json(mockParticipants);
+  try {
+    const participants = await (prisma as any).participant.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    return NextResponse.json(participants.map((p: any) => ({
+      address: p.address,
+      name: p.name,
+      authorized: p.isAuthorized
+    })));
+  } catch (err) {
+    return NextResponse.json({ error: "Failed to fetch participants" }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
@@ -45,7 +51,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid participant payload.", details: validation.error.format() }, { status: 400 });
     }
 
-    const { participantAddress, status } = validation.data;
+    const { participantAddress, status, name } = validation.data;
 
     if (!walletClient || !account) {
       return NextResponse.json({ error: "Institutional relayer not configured." }, { status: 500 });
@@ -65,8 +71,16 @@ export async function POST(request: Request) {
     
     process.stdout.write(`Registry Admin: Transaction submitted ${hash}\n`);
 
-    // 3. Log Administrative Security Action
-    HimalayaSecurity.logAuditAction("WHITELIST_UPDATE", { participantAddress, status, hash });
+    // 3. Persist to Database
+    await (prisma as any).participant.upsert({
+      where: { address: participantAddress },
+      update: { isAuthorized: status, name: name || "Institutional Participant" },
+      create: { address: participantAddress, isAuthorized: status, name: name || "Institutional Participant" }
+    });
+
+    // 4. Log Administrative Security Action
+    await HimalayaSecurity.logAuditAction("WHITELIST_UPDATE", { participantAddress, status, hash });
+
 
     return NextResponse.json({
       status: "Submitted",
@@ -79,3 +93,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to update participant authorization." }, { status: 500 });
   }
 }
+

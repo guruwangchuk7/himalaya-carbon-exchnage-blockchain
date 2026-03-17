@@ -53,8 +53,8 @@ export default function TransparencyPage() {
     fetchData();
   }, []);
 
-  const onChainIssued = registryStats?.onChainIssued || 153850;
-  const registryLocked = registryStats?.registryLocked || 154000;
+  const onChainIssued = registryStats?.onChainIssued || 153852;
+  const registryLocked = registryStats?.registryLocked || 154002;
   const reserveRatio = (onChainIssued / registryLocked) * 100;
   const healthStatus = onChainIssued <= registryLocked ? "Healthy" : "Mismatch Warning";
 

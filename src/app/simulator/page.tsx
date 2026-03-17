@@ -8,6 +8,7 @@ import { Button } from "@/components/Button";
 import { useState } from "react";
 import { generateTestSignature } from "@/app/actions/simulate";
 import { useAccount } from "wagmi";
+import { useEffect } from "react";
 
 export default function RegistrySimulator() {
   const { address } = useAccount();
@@ -15,7 +16,7 @@ export default function RegistrySimulator() {
   const [logs, setLogs] = useState<{ time: string; msg: string; type: "info" | "success" | "error" }[]>([]);
 
   const [formData, setFormData] = useState({
-    recipient: (address as string) || "0x0000000000000000000000000000000000000000",
+    recipient: "",
     id: "1",
     amount: "5000",
     projectName: "Bhutan Forest Restoration",
@@ -26,6 +27,15 @@ export default function RegistrySimulator() {
     serialNumber: `SN-BT-${Date.now()}`,
     isArticle6Authorized: true,
   });
+
+  // Sync wallet address to recipient field
+  useEffect(() => {
+    if (address) {
+      setFormData(prev => ({ ...prev, recipient: address }));
+    } else {
+      setFormData(prev => ({ ...prev, recipient: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266" })); // Default Hardhat Account #0
+    }
+  }, [address]);
 
   const addLog = (msg: string, type: "info" | "success" | "error" = "info") => {
     setLogs((prev) => [...prev, { time: new Date().toLocaleTimeString(), msg, type }]);
@@ -78,6 +88,12 @@ export default function RegistrySimulator() {
       } else {
         addLog(`Relay Failed: ${data.error || "Unknown Error"}`, "error");
         if (data.details) {
+          // Flatten Zod errors for display
+          Object.entries(data.details).forEach(([key, value]: [string, any]) => {
+            if (key !== '_errors') {
+              addLog(`- ${key}: ${value._errors.join(', ')}`, "error");
+            }
+          });
           console.error("Validation Details:", data.details);
         }
       }

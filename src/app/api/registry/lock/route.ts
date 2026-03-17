@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { HimalayaSecurity, RegistryMetadataSchema } from "@/lib/security";
 import { mintFromRegistry } from "@/lib/blockchain";
+import { prisma } from "@/lib/db/prisma";
 
 /**
  * Himalaya Carbon Registry Bridge Endpoint
@@ -61,8 +62,31 @@ export async function POST(request: Request) {
     if (result.success) {
       process.stdout.write(`Registry Bridge: SUCCESSFULLY MINTED credits on-chain. TX: ${result.hash}\n`);
       
-      // 5. Log Administrative Audit Action
-      HimalayaSecurity.logAuditAction("MINT_VINTAGE", { projectID: metadata.projectID, amount, hash: result.hash });
+      // 5. Sync Project Metadata to Searchable Registry DB
+      try {
+        await prisma.registryProject.upsert({
+          where: { projectId: metadata.projectID },
+          update: {
+            totalVolume: { increment: Number(amount) },
+            status: "ISSUED_ON_CHAIN"
+          },
+          create: {
+            projectId: metadata.projectID,
+            projectName: metadata.projectName,
+            methodology: metadata.methodology,
+            vintageYear: Number(metadata.vintageYear),
+            totalVolume: Number(amount),
+            isArticle6: metadata.isArticle6Authorized ?? true,
+            status: "ISSUED_ON_CHAIN",
+            developerId: "00000000-0000-0000-0000-000000000000" // System Default
+          }
+        });
+      } catch (dbErr) {
+        process.stderr.write(`Database Sync Warning: ${dbErr}\n`);
+      }
+
+      // 6. Log Administrative Audit Action
+      await HimalayaSecurity.logAuditAction("MINT_VINTAGE", { projectID: metadata.projectID, amount, hash: result.hash });
 
       return NextResponse.json({
         status: "Synchronized",

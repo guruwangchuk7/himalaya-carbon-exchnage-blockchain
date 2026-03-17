@@ -1,30 +1,38 @@
 import { createWalletClient, createPublicClient, http, custom } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { polygonAmoy } from "viem/chains";
+import { polygon, polygonAmoy, hardhat } from "viem/chains";
 import { REGISTRY_ABI } from "@/constants";
 
 // For Server-side operations using Private Key
 const PRIV_KEY = process.env.PRIV_KEY as `0x${string}`;
 const REGISTRY_ADDRESS = process.env.NEXT_PUBLIC_REGISTRY_ADDRESS as `0x${string}`;
+const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 80002);
 
-if (!PRIV_KEY) {
+// Resolve the chain based on configured ID
+export const chain = 
+  CHAIN_ID === 137 ? polygon : 
+  CHAIN_ID === 31337 ? hardhat : 
+  polygonAmoy;
+
+if (!PRIV_KEY && process.env.NODE_ENV === "production") {
   process.stderr.write("CRITICAL: PRIV_KEY not configured in environment variables.\n");
 }
 
 export const account = PRIV_KEY ? privateKeyToAccount(PRIV_KEY) : null;
 
 export const publicClient = createPublicClient({
-  chain: polygonAmoy,
+  chain,
   transport: http(process.env.NEXT_PUBLIC_RPC_URL),
 });
 
 export const walletClient = account
   ? createWalletClient({
     account,
-    chain: polygonAmoy,
+    chain,
     transport: http(process.env.NEXT_PUBLIC_RPC_URL),
   })
   : null;
+
 
 /**
  * Registry Bridge Core: On-chain Minting Implementation

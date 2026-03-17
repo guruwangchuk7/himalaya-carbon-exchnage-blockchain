@@ -1,51 +1,53 @@
-# Himalaya Carbon Exchange: Backend Integration Phases
+# Implementation Progress & Integration Roadmap
 
-This document outlines the phased implementation plan for migrating the Himalaya Carbon Exchange from a prototype to a production-grade full-stack architecture using **Supabase (PostgreSQL)**.
-
-## 🏗️ Production Stack Architecture
-*   **Frontend**: Next.js (App Router) + React + Tailwind
-*   **Backend / APIs**: Next.js Server Actions & API Routes + Supabase Edge Functions (if needed)
-*   **Database**: Supabase (PostgreSQL)
-*   **Database ORM**: Prisma or Drizzle
-*   **Authentication**: Supabase Auth + SIWE (Sign-In with Ethereum)
-*   **Web3 Indexing**: Viem (cron jobs or event listeners syncing to Postgres)
+This document tracks the evolution of the Himalaya Carbon Exchange from a mock prototype to a high-integrity sovereign infrastructure.
 
 ---
 
-## 📍 Phase 1: Foundation & Secure Environment
-**Goal:** Establish the database, authentication, and secure backend routing.
+## 🚦 Phase Status Summary
 
-*   **API Secrets & Third-Party Integrations:**
-    *   *Problem:* Integrating with National Registry Bridge and CAD Trust requires securing HMAC secrets and API keys away from the frontend.
-    *   *Implementation:* Set up dedicated Next.js API Routes to securely hold environment variables. This backend receives webhooks from the National Registry, validates the HMAC cryptographic signature, and safely signs the transaction to execute `mintCarbonCredit()` on-chain.
-*   **Authentication Hub (Supabase Auth):**
-    *   Integrate SIWE (Sign-In with Ethereum) to securely map user wallets to database sessions.
-    *   Setup traditional email/SSO login for web2 users (e.g., government auditors, registry officials).
-
-## 📍 Phase 2: Compliance, Identity & Workflows
-**Goal:** Move sensitive data and multi-step processes off-chain to ensure privacy law compliance and better UX.
-
-*   **Privacy, KYC, and Institutional Data:**
-    *   *Problem:* Sovereign exchanges cannot place private corporate data (KYC, Government IDs) on a blockchain due to privacy laws.
-    *   *Implementation:* Create a secure, encrypted schema in Supabase. The smart contract only retains the wallet address and authorization status (`isAuthorized = true`). The Postgres database maps the address (`0x123...`) to the institutional profile (e.g., "Bhutan Power Corp"), along with contact persons and uploaded compliance PDFs.
-*   **Application State & Draft Workflows:**
-    *   *Problem:* Carbon issuance involves multi-day workflows (document upload, audit approval, government sign-off) that do not belong on-chain.
-    *   *Implementation:* Track project states (`Draft` -> `Under Audit` -> `Approved`) in Supabase. Only when the status reaches "Approved" does the Next.js backend trigger the blockchain to physically mint the tokens.
-
-## 📍 Phase 3: Web3 Indexing & Market Discovery
-**Goal:** Drastically improve UI read performance and enable complex filtering without incurring high RPC node request limits.
-
-*   **The "Indexer" and Read Performance (Caching):**
-    *   *Problem:* Blockchain nodes are slow for queries like filtering the `/marketplace` by "Reforestation", "Vintage 2023", and "Volume > 10,000".
-    *   *Implementation:* Build a backend indexer script using Viem that listens to smart contract events (like `CarbonMinted`). This script continually saves the blockchain data into Supabase (PostgreSQL). The frontend then queries the fast Postgres DB to render the UI instantly.
-
-## 📍 Phase 4: Off-Chain Trading Engine
-**Goal:** Eliminate unnecessary gas fees for market discovery and intent-to-trade actions.
-
-*   **The RFQ System and Market Order Books:**
-    *   *Problem:* Putting every bid, ask, or Request for Quote (RFQ) on-chain forces users to pay network fees just to post an intent to buy.
-    *   *Implementation:* Build an off-chain order book and RFQ database in Supabase. Institutional buyers submit bids to the database. Only when the buyer and seller agree and match their orders off-chain does the backend construct the transaction for final settlement on the blockchain.
+| Phase | Description | Status | Key Deliverables |
+| :--- | :--- | :--- | :--- |
+| **Phase 1** | Foundation & Secure Environment | ✅ Complete | HMAC Bridge, Next.js Server Actions, Relayer Wallet |
+| **Phase 2** | Database & Metadata Layer | ✅ Complete | Prisma ORM, Supabase Integration, Sovereign Sync Engine |
+| **Phase 3** | Global Interoperability | 🔄 Active | Harmony Watcher, CAD Trust v2 API, Event Monitoring |
+| **Phase 4** | Identity & Governance | 📅 Post-Demo | NDI Integration, Multi-Sig Safe Ownership |
+| **Phase 5** | Advanced Trading | 📅 Post-Demo | Off-chain Order Matching, Tokenized Pools |
 
 ---
 
-**Summary:** The smart contract handles **Settlement, Ownership, and Scarcity**. The Supabase Database handles **Discovery, User Profiles, Privacy, and Speed**.
+## 📍 Completed: Phase 1 & 2 (The Integrity Core)
+
+We have successfully moved from hard-coded mocks to a **Data-Grounded Architecture**.
+-   **Sovereign Bridge**: Implemented the HMAC-SHA256 hook system for the NCRC to signal project locks.
+-   **Metadata Shadowing**: The **Sync Engine** now mirrors the Ethereum Virtual Machine (EVM) state into a PostgreSQL database, enabling high-performance marketplace discovery.
+-   **Relayer Logic**: Browser-less contract writes are operational, protecting the government's private keys.
+
+---
+
+## 📍 Active: Phase 3 (Global Interoperability)
+
+The current sprint focuses on alignment with the **Article 6.2 Carbon Lifecycle**.
+-   **CAD Trust Monitoring**: The **Harmony Watcher** is now functional, listening for real-time retirement events.
+-   **ITMO Serialization**: We have mapped local serial numbers to global GIN (Global Identification Number) standards.
+-   **Resilience**: Implementation of fallback mechanisms for when global metadata nodes are unreachable.
+
+---
+
+## 📍 Future: Phase 4 & 5 (Hardening & Scale)
+
+### 1. NDI Integration (Bhutan-Specific)
+We will replace the shared HMAC secret with **National Digital Identity (NDI)** verified signatures. In this model:
+1.  An official uses their NDI app to sign a "Minting Authorization."
+2.  The HCE backend verifies the DID (Decentralized Identifier) through the Royal Government's NDI node.
+3.  The contract executes only after biometric sovereign approval.
+
+### 2. Fractional Carbon Pools
+Expanding the `CarbonPool.sol` implementation to support Uniswap V3 liquidity. This will allow:
+-   **Price Discovery**: Market-driven pricing for Bhutanese credits.
+-   **Fractional Ownership**: Allowing smaller, high-integrity investors to participate in Bhutan’s carbon success.
+
+---
+
+**Last Audit**: 2026-03-17  
+**Lead Engineer**: HCE Bhutan Team  
