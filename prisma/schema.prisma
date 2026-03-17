@@ -1,20 +1,14 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
 }
 
 model Profile {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String   @id @default(cuid())
   userId         String   @unique // Supabase Auth User ID
   walletAddress  String?  @unique
   organization   String
@@ -41,8 +35,8 @@ model RegistryProject {
   status             ProjectState       @default(DRAFT)
   totalVolume        Int
   isArticle6         Boolean            @default(false)
-  documentsUrl       String[]
-  developerId        String             @db.Uuid
+  documentsUrl       Json?
+  developerId        String
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   rfqs               RFQ[]
@@ -57,15 +51,52 @@ enum ProjectState {
 
 model RFQ {
   id               String          @id @default(cuid())
-  buyerId          String          @db.Uuid
-  buyer            Profile         @relation(fields: [buyerId], references: [id])
+  buyerId          String?
+  buyer            Profile?        @relation(fields: [buyerId], references: [id])
+  buyerName        String?         // For non-logged in or guest institutional RFQs
   projectId        String
-  project          RegistryProject @relation(fields: [projectId], references: [id])
+  project          RegistryProject? @relation(fields: [projectId], references: [id])
+  projectName      String?         // Fallback if registry project not in DB
   targetVolume     Int
-  targetPriceCents Int
+  targetPriceCents Int?
+  purpose          String?
   status           RFQStatus       @default(OPEN)
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
+}
+
+model Participant {
+  id             String   @id @default(cuid())
+  address        String   @unique
+  name           String
+  isAuthorized   Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Certificate {
+  id             String   @id @default(cuid())
+  certificateId  String   @unique // HCR-XXXX
+  projectId      String
+  projectName    String
+  vintageYear    Int
+  amount         String
+  beneficiary    String
+  retirementHash String   @unique
+  cadSyncId      String
+  issuedAt       DateTime @default(now())
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  action       String   // e.g. "WHITELIST_UPDATE"
+  metadata     Json
+  actorAddress String?  // Admin or Registry wallet
+  actorEmail   String?  // Supabase User email
+  eventHash    String   @unique
+  timestamp    DateTime @default(now())
+
+  @@index([action])
 }
 
 enum RFQStatus {
