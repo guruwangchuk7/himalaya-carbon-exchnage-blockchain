@@ -1,59 +1,60 @@
-# Himalaya Carbon Engine: Dashboard & Interface Overview
+# Dashboard & Interface Overview
 
-This document provides a detailed breakdown of the various dashboards and pages within the Himalaya Carbon Engine platform, defining their specific functions, target users, and key features.
+This document provides a detailed breakdown of the functional modules within the **Himalaya Carbon Exchange (HCE)** platform.
 
 ---
 
 ## 🖥️ 1. Main Dashboard (`/dashboard`)
-**Primary Users**: Standard Participants, Institutional Buyers, Project Holders.
+**Primary Users**: Institutional Buyers, Project Holders.
 
-The central hub for managing your interaction with the sovereign carbon market.
-*   **Asset Management**: Real-time view of your Article 6.2 credit holdings (ERC-1155).
-*   **Registry-Market Sync**: A status monitor for the live bridge between your assets and the National Registry.
-*   **Sovereign Trust Indicators**: Visual confirmation of Article 6 status, ITMO authorization, and CAD Trust harmonization.
-*   **Quick Actions**: Direct links to Market Trading, Retirement (Burn), and Liquidity Pools.
-
----
-
-## 🔒 2. Registry Admin Center (`/dashboard/admin`)
-**Primary Users**: National Carbon Registry Officials, Ministry of Energy & Natural Resources.
-
-A restricted, high-security portal for sovereign oversight of the blockchain ecosystem.
-*   **Institutional Whitelist**: The "master switch" for participant authorization. Only whitelisted legal entities can trade or receive credits.
-*   **On-chain Authorization**: A secure interface to call the `setParticipantAuthorization` function on the smart contract.
-*   **Compliance Monitoring**: High-level stats on the total number of sovereign entities, licensed brokers, and cross-border participation.
+The central command hub for the sovereign carbon market.
+-   **Registry Synchronization**: Monitors the live bridge between on-chain assets and the NCRC.
+-   **Article 6.2 Tracking**: Visual indicators for ITMO (Internationally Transferred Mitigation Outcomes) authorization status.
+-   **Global Harmony Status**: Shows real-time connectivity to the CAD Trust network.
+-   **Sovereign Trust Stream**: A live feed of recent minting and retirement verifications.
 
 ---
 
-## ⚖️ 3. Proof of Reserve Dashboard (`/transparency`)
-**Primary Users**: Public, External Auditors, Regulatory Bodies, Media.
+## 🔒 2. Sovereign Admin Center (`/dashboard/admin`)
+**Primary Users**: National Carbon Registry (NCRC) Officials.
 
-The "Integrity Layer" of the platform, providing cryptographic proof of asset backing.
-*   **Reserve Health Index**: A live gauge comparing **Off-chain Locked Units** (in the National Registry) against **On-chain Issued Supply** (the tokens).
-*   **Institutional Audit Log**: A transparent stream of recent minting (issuance) and burning (retirement) events.
-*   **Sovereign Logic Guide**: An educational section explaining how Article 6.2 ITMO authorization and CAD Trust synchronization are enforced.
-
----
-
-## 🛒 4. Integrated Marketplace (`/marketplace`)
-**Primary Users**: Traders, Corporate ESG Teams, Institutional Brokers.
-
-The core trading engine, now supporting two distinct liquidity segments:
-*   **Individual Vintages**: Trading of specific project-linked ERC-1155 credits (e.g., specific reforestation cycles).
-*   **ERC-20 Carbon Pools**: Instant liquidity pools for high-volume trading of composite asset classes (e.g., nature-based or renewable energy pools).
-*   **Institutional RFQ Layer**: A "Request for Quote" system for large-scale acquisitions (over 10,000 tCO2e) which triggers a manual sovereign brokerage flow.
+A high-security portal for the oversight of the blockchain ecosystem.
+-   **Participant Whitelist**: The "Master Switch" for institutional authorization. Only authorized legal entities can participate in the market.
+-   **On-Chain Authorization**: A specialized interface for the `setParticipantAuthorization` function.
+-   **Compliance Dashboard**: Aggregated stats on sovereign participation and cross-border trade volume.
 
 ---
 
-## 🌿 5. Retirement & Proof of Impact (`/retire`)
-**Primary Users**: Corporations seeking to claim carbon offsets, Individuals.
+## ⚖️ 3. Transparency & Proof of Reserve (`/transparency`)
+**Primary Users**: Public, External Auditors, International Regulators.
 
-The final stage of the carbon credit lifecycle where tokens are converted into legal impact claims.
-*   **On-chain Burn Sync**: Triggers the permanent destruction of tokens and notifies the National Registry to officially retire the units.
-*   **Digital Certificate Generation**: Produces a cryptographically signed "Proof of Impact" with a unique GIN (Global Identification Number).
-*   **Verification Timeline**: A live UI that tracks the transaction from blockchain confirmation to sovereign registry finality.
+The "Integrity Layer" providing cryptographic verification of asset backing.
+-   **Reserve Health Gauge**: Compares **Off-chain Physical Locks** vs. **On-chain Digital Issuance**.
+-   **Global Audit Log**: A transparent ledger of all issuance and retirement events.
+-   **Article 6 Logic Map**: Educational visualization of the ITMO lifecycle and Corresponding Adjustments.
 
 ---
 
-**Last Updated**: March 10, 2026  
-**Confidentiality**: Institutional Technical Reference
+## 🛒 4. Carbon Marketplace (`/marketplace`)
+**Primary Users**: ESG Traders, Institutional Brokers.
+
+The unified engine for discovery and acquisition.
+-   **Project Listings**: Searchable database of Bhutanese carbon projects (Hydro, Reforestation, etc.).
+-   **Sovereign Price Feed**: Volume-weighted average prices for different project categories.
+-   **Institutional RFQs**: An automated "Request for Quote" system for high-volume sovereign trades.
+
+---
+
+## 🌿 5. Impact & Retirement (`/retire`)
+**Primary Users**: Organizations claiming carbon neutrality.
+
+The final stage where digital assets are locked as permanent climate impact.
+-   **Automated Retirement**: Direct bridge between on-chain burning and NCRC retirement.
+-   **Harmony Sync**: Triggers the global CAD Trust synchronization.
+-   **Retirement Certificates**: Generation of uniquely hash-linked certificates for ESG reporting.
+
+---
+
+**Version**: 1.1  
+**Last Updated**: 2026-03-17  
+**Status**: Prototype Production-Ready  
