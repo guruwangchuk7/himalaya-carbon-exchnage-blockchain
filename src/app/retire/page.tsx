@@ -11,9 +11,9 @@ import { REGISTRY_ADDRESS, REGISTRY_ABI } from "@/constants";
 import type { ImpactCertificate } from "@/lib/certificates";
 
 const mockHoldings = [
-  { id: 1, projectId: "BHU-RE-2023-001", name: "Wangdue Hydropower", amount: 500 },
-  { id: 2, projectId: "BHU-FOR-2023-009", name: "Gelephu Forestation", amount: 1250 },
-  { id: 3, projectId: "BHU-RE-2022-012", name: "Trongsa Biomass", amount: 215 },
+  { id: 1, projectId: "BT-FOR-2024-001", name: "Bhutan Forest Restoration", amount: 5000 },
+  { id: 2, projectId: "BHU-RE-2023-001", name: "Wangdue Hydropower Offset", amount: 15420 },
+  { id: 3, projectId: "BHU-FOR-2023-009", name: "Gelephu Forestation", amount: 4500 },
 ];
 
 export default function RetirementPage() {

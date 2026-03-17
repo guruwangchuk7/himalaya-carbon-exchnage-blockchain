@@ -46,9 +46,14 @@ const fallbackProjects = [
 
 export default async function MarketplacePage() {
   const result = await getMarketplaceProjects();
-  const projects = result.success && result.data && result.data.length > 0 
-    ? result.data 
-    : fallbackProjects;
+  const liveProjects = result.success && result.data ? result.data : [];
+  
+  // Deduplicate: remove fallbacks that are already in liveProjects
+  const liveIds = new Set(liveProjects.map(p => p.id));
+  const uniqueFallbacks = fallbackProjects.filter(p => !liveIds.has(p.id));
+  
+  // Merge, ensuring live ones come first
+  const projects = [...liveProjects, ...uniqueFallbacks].slice(0, 6);
 
   return (
     <main className="min-h-screen bg-background relative overflow-hidden">

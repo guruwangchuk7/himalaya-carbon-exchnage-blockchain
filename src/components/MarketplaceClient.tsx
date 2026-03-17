@@ -191,29 +191,26 @@ const ProjectCard = ({ project, onRFQ, onAcquire }: { project: any, onRFQ: any, 
     viewport={{ once: true }}
     className="bg-surface border border-border-subtle rounded-3xl overflow-hidden shadow-soft-float hover:shadow-hover-lift transition-all group"
   >
-    <div className="aspect-video relative overflow-hidden">
-      <div className="absolute inset-0 bg-brand/10 group-hover:bg-brand/20 transition-colors" />
-      <div className="absolute top-4 left-4 flex gap-2">
-         {project.authorized && (
-            <span className="flex items-center gap-1 bg-success/10 text-success text-[10px] font-bold px-2 py-1 rounded-full backdrop-blur-md border border-success/20">
-               <Shield size={12} /> Article 6.2
+    <div className="p-8">
+      <div className="flex justify-between items-center mb-6">
+         <div className="flex gap-2">
+            {project.authorized && (
+               <span className="flex items-center gap-1 bg-success/10 text-success text-[10px] font-bold px-3 py-1 rounded-full border border-success/20">
+                  <Shield size={12} /> Article 6.2
+               </span>
+            )}
+            <span className="bg-brand/10 text-brand text-[10px] font-bold px-3 py-1 rounded-full border border-brand/20">
+               {project.vintage}
             </span>
-         )}
-         <span className="bg-white/80 text-foreground text-[10px] font-bold px-2 py-1 rounded-full backdrop-blur-md">
-            {project.vintage}
-         </span>
-      </div>
-    </div>
-    
-    <div className="p-6">
-      <div className="flex justify-between items-start mb-1">
-         <p className="label-meta uppercase tracking-wider">{project.id}</p>
+         </div>
          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm border ${project.riskScore?.startsWith('A') ? 'text-success border-success/20' : 'text-brand border-brand/20'}`}>
             Risk: {project.riskScore}
          </span>
       </div>
+      
+      <p className="label-meta uppercase tracking-wider mb-1">{project.id}</p>
       <h3 className="card-h3 mb-2 group-hover:text-brand transition-colors line-clamp-1">{project.name}</h3>
-      <p className="text-xs text-muted-text mb-6 line-clamp-1">{project.methodology}</p>
+      <p className="text-xs text-muted-text mb-8 line-clamp-1">{project.methodology}</p>
       
       <div className="flex justify-between items-end mb-6">
         <div>

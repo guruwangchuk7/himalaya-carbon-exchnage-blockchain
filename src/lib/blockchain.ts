@@ -1,6 +1,6 @@
 import { createWalletClient, createPublicClient, http, custom } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { polygon, polygonAmoy } from "viem/chains";
+import { polygon, polygonAmoy, hardhat } from "viem/chains";
 import { REGISTRY_ABI } from "@/constants";
 
 // For Server-side operations using Private Key
@@ -9,7 +9,10 @@ const REGISTRY_ADDRESS = process.env.NEXT_PUBLIC_REGISTRY_ADDRESS as `0x${string
 const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 80002);
 
 // Resolve the chain based on configured ID
-export const chain = CHAIN_ID === 137 ? polygon : polygonAmoy;
+export const chain = 
+  CHAIN_ID === 137 ? polygon : 
+  CHAIN_ID === 31337 ? hardhat : 
+  polygonAmoy;
 
 if (!PRIV_KEY && process.env.NODE_ENV === "production") {
   process.stderr.write("CRITICAL: PRIV_KEY not configured in environment variables.\n");
