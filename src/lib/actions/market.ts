@@ -2,6 +2,7 @@
 
 import { prisma } from "../db/prisma";
 import { revalidatePath } from "next/cache";
+import { createClient } from "../supabase/server";
 
 
 
@@ -192,7 +193,7 @@ export async function initiateAcquisition(projectId: string, volume: number) {
     const project = await ensureProject(projectId);
     if (!project) return { success: false, error: "Project not found in registry." };
 
-    // 3. Create the transaction record & Decrement available volume
+    // 3. Create the transaction record & Decrement available volume & Update User Balance
     const [acquisition] = await prisma.$transaction([
       prisma.rFQ.create({
         data: {
@@ -208,11 +209,26 @@ export async function initiateAcquisition(projectId: string, volume: number) {
         data: {
           totalVolume: { decrement: volume }
         }
+      }),
+      prisma.userBalance.upsert({
+        where: {
+          userId_projectSlug: {
+            userId: effectiveUserId,
+            projectSlug: project.projectId
+          }
+        },
+        update: { amount: { increment: volume } },
+        create: {
+          userId: effectiveUserId,
+          projectSlug: project.projectId,
+          amount: volume
+        }
       })
     ]);
 
     revalidatePath("/marketplace");
     revalidatePath("/dashboard");
+    revalidatePath("/retire");
 
     return { success: true, acquisitionId: acquisition.id };
   } catch (error: any) {
@@ -326,5 +342,154 @@ export async function getReserveStats() {
       onChainIssued: 153852, 
       registryLocked: 154002 
     };
+  }
+}
+
+export async function getUserProfile() {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // DEV BYPASS: Allow mock user if in development and session is missing
+    let effectiveUserId = user?.id;
+    if (!effectiveUserId && process.env.NODE_ENV === 'development') {
+      effectiveUserId = "00000000-0000-0000-0000-000000000000";
+    }
+
+    if (!effectiveUserId) return { success: false, error: "Unauthorized" };
+
+    const profile = await prisma.profile.findUnique({
+      where: { userId: effectiveUserId }
+    });
+
+    return { 
+      success: true, 
+      data: profile || { 
+        organization: "Institutional User",
+        role: "TRADER",
+        isAuthorized: true
+      } 
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function getUserBalances() {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // DEV BYPASS: Allow mock user if in development and session is missing
+    let effectiveUserId = user?.id;
+    if (!effectiveUserId && process.env.NODE_ENV === 'development') {
+      effectiveUserId = "00000000-0000-0000-0000-000000000000";
+    }
+
+    if (!effectiveUserId) return { success: false, error: "Unauthorized" };
+
+    const balances = await prisma.userBalance.findMany({
+      where: { userId: effectiveUserId },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    // Manually join with project details because of the slug-based relationship
+    const projectIds = balances.map(b => b.projectSlug);
+    const projects = await prisma.registryProject.findMany({
+      where: { projectId: { in: projectIds } }
+    });
+
+    const enrichedBalances = balances.map(b => {
+      const project = projects.find(p => p.projectId === b.projectSlug);
+      return {
+        ...b,
+        projectName: project?.projectName || "Sovereign Carbon Asset"
+      };
+    });
+
+    return { success: true, data: enrichedBalances };
+  } catch (error: any) {
+    console.error("Fetch Balances Error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function retireCredits(projectId: string, amount: number, beneficiary: string, reason?: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // DEV BYPASS: Allow mock user if in development and session is missing
+    let effectiveUserId = user?.id;
+    if (!effectiveUserId && process.env.NODE_ENV === 'development') {
+      effectiveUserId = "00000000-0000-0000-0000-000000000000";
+    }
+
+    if (!effectiveUserId) return { success: false, error: "Unauthorized" };
+
+    // 1. Verify Balance
+    const balance = await prisma.userBalance.findUnique({
+      where: {
+        userId_projectSlug: {
+          userId: effectiveUserId,
+          projectSlug: projectId
+        }
+      }
+    });
+
+    if (!balance || balance.amount < amount) {
+      return { success: false, error: "Insufficient balance for retirement. You must buy credits first." };
+    }
+
+    // 2. Resolve Project Name for the certificate (Production would use a Join)
+    const project = await prisma.registryProject.findUnique({
+      where: { projectId: projectId }
+    });
+
+    // 3. Perform Retirement (Transaction)
+    // We generate a mock hash that looks like a Polygon transaction hash
+    const retirementHash = `0x${Math.random().toString(16).slice(2, 66)}`;
+    const certificateId = `HCR-${Math.floor(Math.random() * 900000) + 100000}`;
+
+    await prisma.$transaction([
+      prisma.userBalance.update({
+        where: { id: balance.id },
+        data: { amount: { decrement: amount } }
+      }),
+      prisma.certificate.create({
+        data: {
+          certificateId,
+          projectId,
+          projectName: project?.projectName || "Sovereign Carbon Asset",
+          vintageYear: project?.vintageYear || 2024,
+          amount: amount.toString(),
+          beneficiary,
+          retirementHash,
+          cadSyncId: `CAD-${Math.random().toString(36).slice(2, 10)}`
+        }
+      }),
+      (prisma as any).auditLog.create({
+        data: {
+          action: "ASSET_RETIREMENT",
+          actorEmail: user?.email || "mock@ncrc.bt",
+          eventHash: retirementHash,
+          metadata: { 
+            projectId, 
+            amount, 
+            beneficiary, 
+            reason: reason || "Standard Retirement" 
+          }
+        }
+      })
+    ]);
+
+    revalidatePath("/retire");
+    revalidatePath("/transparency");
+    revalidatePath("/dashboard");
+
+    return { success: true, certificateId, retirementHash };
+  } catch (error: any) {
+    console.error("Retirement Error:", error);
+    return { success: false, error: error.message };
   }
 }

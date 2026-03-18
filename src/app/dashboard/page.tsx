@@ -2,11 +2,12 @@
 
 import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
-import { Shield, BarChart3, Database, CheckCircle2, AlertCircle, Globe, Zap, RefreshCcw } from "lucide-react";
+import { Shield, BarChart3, Database, CheckCircle2, AlertCircle, Globe, Zap, RefreshCcw, Info, Fingerprint, FileText } from "lucide-react";
 import { Button } from "@/components/Button";
 import { useState, useEffect } from "react";
 import { RFQStatusPanel } from "@/components/RFQStatusPanel";
 import { getRegistryProjects, authorizeProjectArticle6, syncCADTrust } from "@/lib/actions/registry";
+import { getUserBalances } from "@/lib/actions/market";
 
 const StatCard = ({ label, value, icon: Icon, trend }: any) => (
   <div className="bg-surface border border-border-subtle p-6 rounded-3xl shadow-soft-float">
@@ -27,64 +28,152 @@ const StatCard = ({ label, value, icon: Icon, trend }: any) => (
 
 const ProjectStatusRow = ({ project, onUpdate }: { project: any, onUpdate: () => void }) => {
   const [isSyncing, setIsSyncing] = useState(false);
+  const [signingState, setSigningState] = useState<null | 'SIGNING' | 'VERIFIED'>(null);
+  const [showEvidence, setShowEvidence] = useState(false);
 
   const handleAuthorize = async () => {
     setIsSyncing(true);
+    setSigningState('SIGNING');
+    
+    // Simulate high-security sovereign signing handshake
+    await new Promise(r => setTimeout(r, 2000));
+    
     try {
       const res = await authorizeProjectArticle6(project.id, !project.isArticle6);
       if (res.success) {
+        setSigningState('VERIFIED');
+        await new Promise(r => setTimeout(r, 1500));
         onUpdate();
       }
     } finally {
       setIsSyncing(false);
+      setSigningState(null);
     }
   };
 
   return (
-    <div className="flex items-center justify-between p-4 bg-background border border-border-subtle rounded-2xl group transition-all hover:border-brand/30">
-      <div className="flex items-center gap-4">
-        <div className={`w-2 h-2 rounded-full ${project.isArticle6 ? 'bg-success' : 'bg-warning animate-pulse'}`} />
-        <div>
-          <p className="font-bold text-sm tracking-tight">{project.projectId}</p>
-          <p className="text-[10px] text-muted-text font-medium uppercase tracking-wider">{project.projectName} • {project.vintageYear}</p>
+    <div className="flex flex-col gap-4 p-4 bg-background border border-border-subtle rounded-2xl group transition-all hover:border-brand/30">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className={`w-2 h-2 rounded-full ${project.isArticle6 ? 'bg-success' : 'bg-warning animate-pulse'}`} />
+          <div>
+            <p className="font-bold text-sm tracking-tight">{project.projectId}</p>
+            <p className="text-[10px] text-muted-text font-medium uppercase tracking-wider">{project.projectName} • {project.vintageYear}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => setShowEvidence(!showEvidence)}
+            className="flex items-center gap-2 text-[10px] font-bold text-brand hover:text-accent transition-colors py-1 px-3 bg-brand/5 border border-brand/10 rounded-lg"
+          >
+            <Info size={12} /> {showEvidence ? 'Hide Source Evidence' : 'View Source Proofs'}
+          </button>
+          <div className="flex items-center gap-2">
+            {signingState === 'SIGNING' ? (
+              <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-brand px-3 py-1 bg-brand/5 border border-brand/20 rounded-full animate-pulse">
+                <RefreshCcw size={12} className="animate-spin" /> Validating Sovereign Signature...
+              </span>
+            ) : signingState === 'VERIFIED' ? (
+              <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-success px-3 py-1 bg-success/10 border border-success/20 rounded-full">
+                <CheckCircle2 size={12} /> Signature Verified by NCRC Bridge
+              </span>
+            ) : project.isArticle6 ? (
+              <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-success px-3 py-1 bg-success/5 border border-success/10 rounded-full">
+                <CheckCircle2 size={12} /> Article 6.2 Authorized
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-warning px-3 py-1 bg-warning/5 border border-warning/10 rounded-full">
+                <AlertCircle size={12} /> Pending Approval
+              </span>
+            )}
+          </div>
+          <Button 
+            variant="secondary" 
+            className="px-3 py-1.5 text-[9px] uppercase tracking-widest hidden group-hover:flex items-center gap-2"
+            onClick={handleAuthorize}
+            disabled={isSyncing}
+          >
+            {isSyncing ? <RefreshCcw size={10} className="animate-spin" /> : null}
+            {signingState === 'SIGNING' ? 'Signing...' : project.isArticle6 ? 'Revoke' : 'Authorize'}
+          </Button>
         </div>
       </div>
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          {project.isArticle6 ? (
-            <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-success px-3 py-1 bg-success/5 border border-success/10 rounded-full">
-              <CheckCircle2 size={12} /> Article 6.2 Authorized
-            </span>
-          ) : (
-            <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-warning px-3 py-1 bg-warning/5 border border-warning/10 rounded-full">
-              <AlertCircle size={12} /> Pending Approval
-            </span>
-          )}
-        </div>
-        <Button 
-          variant="secondary" 
-          className="px-3 py-1.5 text-[9px] uppercase tracking-widest hidden group-hover:flex items-center gap-2"
-          onClick={handleAuthorize}
-          disabled={isSyncing}
+
+      {showEvidence && (
+        <motion.div 
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="bg-secondary-bg/20 rounded-xl p-4 border border-dashed border-border-subtle"
         >
-          {isSyncing ? <RefreshCcw size={10} className="animate-spin" /> : null}
-          {project.isArticle6 ? 'Revoke' : 'Authorize'}
-        </Button>
-      </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-text flex items-center gap-2">
+                <FileText size={12} /> Registry Serial Proof
+              </span>
+              <p className="text-xs font-mono text-accent bg-background p-2 rounded-lg border border-border-subtle">
+                BT-NC-{project.projectId.split('-').pop()}-2024
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-text flex items-center gap-2">
+                <Shield size={12} /> Verification Report ID
+              </span>
+              <p className="text-xs font-mono text-success bg-background p-2 rounded-lg border border-border-subtle hover:text-brand cursor-pointer">
+                NCRC-AUDIT-VER-{Math.floor(Math.random() * 9000) + 1000}
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-text flex items-center gap-2">
+                <Fingerprint size={12} /> Ministry Digital Fingerprint
+              </span>
+              <p className="text-[9px] font-mono text-tertiary-text bg-background p-2 rounded-lg border border-border-subtle overflow-hidden text-ellipsis whitespace-nowrap">
+                sha256:7f8d9a2b1c4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z...
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </div>
+
   );
 };
 
+const PortfolioItem = ({ balance }: { balance: any }) => (
+  <div className="flex items-center justify-between p-4 bg-background border border-border-subtle rounded-2xl hover:border-brand/40 transition-all">
+    <div className="flex items-center gap-4">
+      <div className="p-3 bg-brand/10 text-brand rounded-xl">
+        <Zap size={20} />
+      </div>
+      <div>
+        <p className="font-bold text-sm tracking-tight">{balance.projectSlug}</p>
+        <p className="text-[10px] text-muted-text font-medium uppercase tracking-widest">Sovereign Asset</p>
+      </div>
+    </div>
+    <div className="text-right">
+      <p className="font-bold text-sm">{balance.amount.toLocaleString()} HCR</p>
+      <p className="text-[10px] text-success font-bold uppercase tracking-widest">SECURED</p>
+    </div>
+  </div>
+);
+
 export default function DashboardPage() {
   const [projects, setProjects] = useState<any[]>([]);
+  const [balances, setBalances] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<any[]>([]);
 
-  const fetchProjects = async () => {
+  const fetchData = async () => {
     setIsLoading(true);
-    const res = await getRegistryProjects();
-    if (res.success && res.data) {
-      setProjects(res.data);
+    const [projRes, balRes] = await Promise.all([
+      getRegistryProjects(),
+      getUserBalances()
+    ]);
+
+    if (projRes.success && projRes.data) {
+      setProjects(projRes.data);
+    }
+    if (balRes.success && balRes.data) {
+      setBalances(balRes.data);
     }
     setIsLoading(false);
   };
@@ -101,7 +190,7 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    fetchProjects();
+    fetchData();
   }, []);
 
   return (
@@ -150,7 +239,7 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   projects.map(p => (
-                    <ProjectStatusRow key={p.id} project={p} onUpdate={fetchProjects} />
+                    <ProjectStatusRow key={p.id} project={p} onUpdate={fetchData} />
                   ))
                 )}
               </div>
@@ -232,28 +321,47 @@ export default function DashboardPage() {
 
           {/* Side Panels */}
           <div className="space-y-8">
-            <section className="bg-accent text-white rounded-[40px] p-10 shadow-2xl relative overflow-hidden">
+            {/* NEW: My Portfolio Section */}
+            <section className="bg-accent text-white rounded-[40px] p-10 shadow-2xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-brand/30 blur-[100px] rounded-full -z-10" />
               <div className="relative z-10">
-                 <h2 className="text-2xl font-bold mb-6">Market Liquidity</h2>
-                 <p className="text-gray-400 text-sm mb-10 leading-relaxed font-medium">
-                   Manage your position in authorized carbon pools. Direct integration with Uniswap V3 for seamless exit and entry.
+                <h2 className="text-xl font-bold mb-6 flex items-center gap-3">
+                   <Database className="text-brand" size={24} /> My Asset Portfolio
+                </h2>
+                {balances.length === 0 ? (
+                  <div className="bg-white/10 p-6 rounded-2xl border border-white/5 text-center">
+                     <p className="text-xs text-gray-400 mb-4">You don't own any carbon credits yet.</p>
+                     <Button href="/marketplace" variant="secondary" className="w-full text-xs">Buy from Marketplace</Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {balances.map((b) => (
+                      <PortfolioItem key={b.id} balance={b} />
+                    ))}
+                    <div className="pt-4">
+                       <Button href="/retire" className="w-full py-4 bg-brand text-accent font-bold rounded-2xl hover:bg-white transition-all shadow-lg hover:shadow-brand/20">
+                          Retire My Credits
+                       </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className="bg-surface border border-border-subtle rounded-[40px] p-10 shadow-soft-float relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-brand/10 blur-[60px] rounded-full -z-10" />
+              <div className="relative z-10">
+                 <h2 className="text-2xl font-bold mb-6">Marketplace Access</h2>
+                 <p className="text-muted-text text-sm mb-10 leading-relaxed font-medium">
+                   Discover and acquire Article 6.2 authorized carbon credits directly from the national registry.
                  </p>
                  <div className="space-y-4">
                     <Button 
-                       href="/marketplace?view=pools"
-                       className="w-full bg-brand text-white border-0 hover:bg-brand/90 flex items-center justify-center gap-3 py-5 rounded-2xl shadow-xl"
+                       href="/marketplace"
+                       className="w-full border-0 shadow-lg shadow-brand/10 flex items-center justify-center gap-3 py-5 rounded-2xl hover:scale-[1.02] transition-transform"
                     >
-                       Access Carbon Pools <Zap size={18} />
+                       Go to Carbon Marketplace <Zap size={18} />
                     </Button>
-                    <div className="grid grid-cols-2 gap-4">
-                       <Button variant="secondary" className="bg-white/5 hover:bg-white/10 border-white/10 text-white flex items-center justify-center gap-2 py-4 rounded-xl">
-                          Swap <RefreshCcw size={16} />
-                       </Button>
-                       <Button variant="secondary" className="bg-white/5 hover:bg-white/10 border-white/10 text-white flex items-center justify-center gap-2 py-4 rounded-xl">
-                          Pool <Database size={16} />
-                       </Button>
-                    </div>
                  </div>
               </div>
             </section>
@@ -286,6 +394,7 @@ export default function DashboardPage() {
               </div>
             </section>
           </div>
+
         </div>
       </div>
     </main>

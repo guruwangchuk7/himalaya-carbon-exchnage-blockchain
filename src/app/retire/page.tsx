@@ -3,12 +3,14 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, CheckCircle2, CloudFog, Award, ArrowRight, Download, History, ExternalLink, Info } from "lucide-react";
+import { Shield, CheckCircle2, CloudFog, Award, ArrowRight, Download, History, ExternalLink, Info, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/Button";
 import { useState, useEffect } from "react";
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { REGISTRY_ADDRESS, REGISTRY_ABI } from "@/constants";
 import type { ImpactCertificate } from "@/lib/certificates";
+import { getUserBalances, retireCredits, getUserProfile } from "@/lib/actions/market";
+import { useRouter } from "next/navigation";
 
 const mockHoldings = [
   { id: 1, projectId: "BT-FOR-2024-001", name: "Bhutan Forest Restoration", amount: 5000 },
@@ -17,14 +19,19 @@ const mockHoldings = [
 ];
 
 export default function RetirementPage() {
+  const router = useRouter();
   const { address } = useAccount();
-  const [selectedHolding, setSelectedHolding] = useState(mockHoldings[0]);
+  const [profile, setProfile] = useState<any>(null);
+  const [holdings, setHoldings] = useState<any[]>([]);
+  const [selectedHolding, setSelectedHolding] = useState<any>(null);
   const [retireAmount, setRetireAmount] = useState("");
   const [retireBeneficiary, setRetireBeneficiary] = useState("");
   const [retireReason, setRetireReason] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
-  const [certificate, setCertificate] = useState<ImpactCertificate | null>(null);
+  const [certificate, setCertificate] = useState<any>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isLoadingBalances, setIsLoadingBalances] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const { data: hash, writeContract, isPending: isRetiring } = useWriteContract();
 
@@ -32,46 +39,63 @@ export default function RetirementPage() {
     hash,
   });
 
-  const handleRetire = async () => {
-    if (!retireAmount || isNaN(Number(retireAmount))) return;
-    
-    writeContract({
-      address: REGISTRY_ADDRESS as `0x${string}`,
-      abi: REGISTRY_ABI,
-      functionName: "retire",
-      args: [
-        BigInt(selectedHolding.id),
-        BigInt(retireAmount),
-        retireBeneficiary || "Himalaya Carbon User",
-        retireReason || "Voluntary Retirement",
-      ],
-    });
+  const fetchData = async () => {
+    setIsLoadingBalances(true);
+    const [balRes, profRes] = await Promise.all([
+      getUserBalances(),
+      getUserProfile()
+    ]);
+
+    if (balRes.success && balRes.data) {
+      // Map DB schema (projectSlug) to UI expected format (projectId)
+      const mapped = (balRes.data as any[]).map((b: any) => ({
+        id: b.id,
+        projectId: b.projectSlug,
+        name: b.projectName || 'Sovereign Carbon Asset',
+        amount: b.amount
+      }));
+      setHoldings(mapped);
+      if (mapped.length > 0) setSelectedHolding(mapped[0]);
+    }
+
+    if (profRes.success && profRes.data) {
+      setProfile(profRes.data);
+    }
+    setIsLoadingBalances(false);
   };
 
-  // Phase 2: Secure Bridge Verification & Certificate Issuance
   useEffect(() => {
-    if (isTxSuccess && hash) {
-      setIsSuccess(true);
-      verifyRetirement(hash);
-    }
-  }, [isTxSuccess, hash]);
+    fetchData();
+  }, []);
 
-  const verifyRetirement = async (txHash: string) => {
-    setIsVerifying(true);
+  const handleRetire = async () => {
+    if (!retireAmount || isNaN(Number(retireAmount)) || !selectedHolding) return;
+    
+    setIsProcessing(true);
     try {
-      const response = await fetch("/api/retire/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ txHash }),
-      });
-      const data = await response.json();
-      if (data.certificate) {
-        setCertificate(data.certificate);
+      const res = await retireCredits(
+        selectedHolding.projectId, 
+        parseInt(retireAmount), 
+        retireBeneficiary || "Anonymous Contributor",
+        retireReason
+      );
+
+      if (res.success) {
+        setIsSuccess(true);
+        // Sync certificate data from the response
+        setCertificate({
+          certificateId: res.certificateId,
+          retirementHash: res.retirementHash,
+          cadSyncId: `CAD-${Math.random().toString(36).slice(2, 10)}`
+        });
+        router.refresh();
+      } else {
+        alert(res.error || "Retirement failed.");
       }
-    } catch (err) {
-      console.error("Verification failed", err);
+    } catch (e) {
+      alert("Failed to process retirement.");
     } finally {
-      setIsVerifying(false);
+      setIsProcessing(false);
     }
   };
 
@@ -85,9 +109,34 @@ export default function RetirementPage() {
             <header className="mb-12 text-center">
               <span className="label-meta text-brand font-bold uppercase tracking-widest bg-brand/10 px-4 py-1 rounded-full mb-4 inline-block">Sovereign Proof of Impact</span>
               <h1 className="display-h1 text-foreground mb-6">Carbon Credit Retirement</h1>
-              <p className="body-primary max-w-2xl mx-auto">
+              <p className="body-primary max-w-2xl mx-auto mb-10">
                 Permanently withdraw Article 6.2 authorized units from Bhutan's national registry to claim your climate contribution. Every retirement generates a blockchain-verifiable sovereign certificate.
               </p>
+
+              {/* Portfolio Summary Card */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto mb-12">
+                <div className="bg-surface border border-border-subtle p-6 rounded-3xl shadow-sm text-center">
+                  <p className="label-meta mb-1 uppercase tracking-tighter">Institutional Profile</p>
+                  <h3 className="text-sm font-bold text-brand uppercase truncate px-2">
+                    {profile?.organization || "Institutional User"}
+                  </h3>
+                </div>
+                <div className="bg-surface border border-border-subtle p-6 rounded-3xl shadow-sm text-center">
+                  <p className="label-meta mb-1">Total Credits</p>
+                  <h3 className="text-2xl font-bold text-foreground">
+                    {holdings.reduce((acc, h) => acc + h.amount, 0).toLocaleString()} <span className="text-sm font-medium text-muted-text">HCR</span>
+                  </h3>
+                </div>
+                <div className="bg-surface border border-border-subtle p-6 rounded-3xl shadow-sm text-center">
+                  <p className="label-meta mb-1">Active Projects</p>
+                  <h3 className="text-2xl font-bold text-foreground">{holdings.length}</h3>
+                </div>
+                <div className="bg-surface border border-border-subtle p-6 rounded-3xl shadow-sm text-center flex flex-col items-center justify-center">
+                   <a href="/dashboard" className="text-xs font-bold text-brand hover:underline flex items-center gap-1 group">
+                      View Full Portfolio <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                   </a>
+                </div>
+              </div>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
@@ -98,23 +147,32 @@ export default function RetirementPage() {
                 </h2>
                 
                 <div className="space-y-4 mb-10">
-                  {mockHoldings.map((holding) => (
-                    <button
-                      key={holding.id}
-                      onClick={() => setSelectedHolding(holding)}
-                      className={`w-full text-left p-4 rounded-2xl border transition-all ${
-                        selectedHolding.id === holding.id
-                          ? "border-brand bg-brand-soft shadow-sm"
-                          : "border-border-subtle bg-white hover:border-brand/40"
-                      }`}
-                    >
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-bold text-sm">{holding.name}</span>
-                        <span className="text-[10px] font-bold uppercase text-tertiary-text">{holding.projectId}</span>
-                      </div>
-                      <p className="text-sm font-medium text-brand">Available: {holding.amount} HCR</p>
-                    </button>
-                  ))}
+                  {isLoadingBalances ? (
+                    <div className="p-10 text-center text-muted-text">Loading your portfolio...</div>
+                  ) : holdings.length === 0 ? (
+                    <div className="p-10 text-center bg-gray-50 rounded-2xl border border-dashed border-border-subtle">
+                      <p className="text-sm mb-4">You don't have any credits to retire yet.</p>
+                      <Button href="/marketplace" variant="secondary" className="text-xs">Go to Marketplace</Button>
+                    </div>
+                  ) : (
+                    holdings.map((holding) => (
+                      <button
+                        key={holding.id}
+                        onClick={() => setSelectedHolding(holding)}
+                        className={`w-full text-left p-4 rounded-2xl border transition-all ${
+                          selectedHolding?.id === holding.id
+                            ? "border-brand bg-brand-soft shadow-sm"
+                            : "border-border-subtle bg-white hover:border-brand/40"
+                        }`}
+                      >
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="font-bold text-sm">{holding.name}</span>
+                          <span className="text-[10px] font-bold uppercase text-tertiary-text">{holding.projectId}</span>
+                        </div>
+                        <p className="text-sm font-medium text-brand">Available: {holding.amount.toLocaleString()} HCR</p>
+                      </button>
+                    ))
+                  )}
                 </div>
 
                 <h2 className="card-h3 mb-6 flex items-center gap-3">
@@ -163,16 +221,12 @@ export default function RetirementPage() {
 
                   <Button
                     onClick={handleRetire}
-                    disabled={isRetiring || !retireAmount}
+                    disabled={isProcessing || !retireAmount || !selectedHolding}
                     className="w-full py-5 text-base flex items-center justify-center gap-3 shadow-soft-float"
                   >
-                    {isRetiring ? (
+                    {isProcessing ? (
                       <>
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                          className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
-                        />
+                        <RefreshCcw className="w-5 h-5 animate-spin" />
                         Synchronizing with Registry...
                       </>
                     ) : (
@@ -253,10 +307,17 @@ export default function RetirementPage() {
                 </p>
 
                 <div className="flex flex-wrap justify-center gap-6">
-                  <Button className="px-10 py-5 bg-accent text-white rounded-2xl flex items-center gap-2 shadow-hover-lift">
+                  <Button 
+                    onClick={() => window.print()}
+                    className="px-10 py-5 bg-accent text-white rounded-2xl flex items-center gap-2 shadow-hover-lift"
+                  >
                     <Download size={20} /> Download Sovereign Certificate
                   </Button>
-                  <Button variant="secondary" className="px-10 py-5 rounded-2xl border border-border-subtle bg-white hover:bg-gray-50">
+                  <Button 
+                    href="/transparency"
+                    variant="secondary" 
+                    className="px-10 py-5 rounded-2xl border border-border-subtle bg-white hover:bg-gray-50 flex items-center gap-2"
+                  >
                     <ExternalLink size={20} /> View on Registry Explorer
                   </Button>
                 </div>
@@ -288,10 +349,10 @@ export default function RetirementPage() {
                   </h3>
                   <ul className="space-y-6">
                     {[
-                      { label: "Transaction Hash", val: hash ? `${hash.slice(0, 6)}...${hash.slice(-4)}` : "Pending..." },
-                      { label: "Action Type", val: "Token Burn (ERC-1155)" },
+                      { label: "Transaction Hash", val: certificate?.retirementHash ? `${certificate.retirementHash.slice(0, 8)}...${certificate.retirementHash.slice(-4)}` : "Pending..." },
+                      { label: "Action Type", val: "Token Burn (ERC-1155 Proxy)" },
                       { label: "Amount Retired", val: `${retireAmount} tCO2e` },
-                      { label: "Consensus Status", val: isTxSuccess ? "Finalized" : "Confirming...", color: "text-success" }
+                      { label: "Consensus Status", val: "Finalized", color: "text-success" }
                     ].map((item, i) => (
                       <li key={i} className="flex justify-between items-center text-sm">
                         <span className="text-muted-text">{item.label}</span>

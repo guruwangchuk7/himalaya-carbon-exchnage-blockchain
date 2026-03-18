@@ -99,6 +99,16 @@ model AuditLog {
   @@index([action])
 }
 
+model UserBalance {
+  id        String   @id @default(cuid())
+  userId    String   // Matches Profile.userId or Supabase userId
+  projectSlug String // Matches RegistryProject.projectId (e.g. BT-FOR-2024-001)
+  amount    Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, projectSlug])
+}
+
 enum RFQStatus {
   OPEN
   NEGOTIATING
