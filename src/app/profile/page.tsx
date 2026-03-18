@@ -3,10 +3,10 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { motion } from "framer-motion";
-import { Shield, User, Building2, Wallet, CheckCircle2, ChevronRight, LogOut, RefreshCcw } from "lucide-react";
+import { Shield, User, Building2, Wallet, CheckCircle2, ChevronRight, LogOut, RefreshCcw, CloudFog, ArrowRight } from "lucide-react";
 import { Button } from "@/components/Button";
 import { useState, useEffect } from "react";
-import { getUserProfile, upsertUserProfile } from "@/lib/actions/market";
+import { getUserProfile, upsertUserProfile, getUserBalances, getUserRFQs } from "@/lib/actions/market";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -14,6 +14,8 @@ export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
+  const [balances, setBalances] = useState<any[]>([]);
+  const [rfqs, setRfqs] = useState<any[]>([]);
   const [orgName, setOrgName] = useState("");
   const [role, setRole] = useState<"TRADER" | "OPERATOR" | "AUDITOR">("TRADER");
   const [wallet, setWallet] = useState("");
@@ -28,13 +30,22 @@ export default function ProfilePage() {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       setUser(currentUser);
       
-      const res = await getUserProfile();
-      if (res.success && res.data) {
-        setProfile(res.data);
-        setOrgName(res.data.organization || "");
-        setRole(res.data.role || "TRADER");
-        setWallet(res.data.walletAddress || "");
+      const [profRes, balRes, rfqRes] = await Promise.all([
+        getUserProfile(),
+        getUserBalances(),
+        getUserRFQs()
+      ]);
+
+      if (profRes.success && profRes.data) {
+        setProfile(profRes.data);
+        setOrgName(profRes.data.organization || "");
+        setRole(profRes.data.role || "TRADER");
+        setWallet(profRes.data.walletAddress || "");
       }
+
+      if (balRes.success) setBalances(balRes.data || []);
+      if (rfqRes.success) setRfqs(rfqRes.data || []);
+
       setIsLoaded(true);
     }
     load();
@@ -92,31 +103,69 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {/* Sidebar Stats */}
             <div className="lg:col-span-1 space-y-6">
-              <div className="bg-surface border border-border-subtle p-8 rounded-[40px] shadow-soft-float text-center">
-                 <div className="w-24 h-24 bg-brand-soft rounded-full flex items-center justify-center mx-auto mb-6 relative">
+              <div className="bg-surface border border-border-subtle p-8 rounded-[40px] shadow-soft-float text-center overflow-hidden relative group">
+                 {/* Visual Accent */}
+                 <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-brand/40 to-accent/40" />
+                 
+                 <div className="w-24 h-24 bg-brand-soft rounded-full flex items-center justify-center mx-auto mb-6 relative ring-8 ring-brand/5">
                     <User size={48} className="text-brand" />
-                    <div className="absolute bottom-1 right-1 w-6 h-6 bg-success border-4 border-white rounded-full" />
+                    <div className="absolute bottom-1 right-1 w-6 h-6 bg-success border-4 border-white rounded-full shadow-sm" />
                  </div>
-                 <h3 className="text-xl font-bold mb-1 truncate px-2">{profile?.organization || "Guest User"}</h3>
-                 <p className="text-xs text-muted-text mb-6 font-mono break-all leading-tight">{user?.email || "Not logged in"}</p>
+                 
+                 <h3 className="text-xl font-bold mb-1 truncate px-2 text-accent">{profile?.organization || "Guest User"}</h3>
+                 <p className="text-[10px] text-muted-text mb-6 font-mono break-all leading-tight bg-secondary-bg/30 py-1 px-3 rounded-full inline-block">{user?.email || "Not logged in"}</p>
                  
                  <div className="flex flex-col gap-3 text-left">
-                    <div className="bg-secondary-bg/50 px-4 py-3 rounded-2xl flex justify-between items-center text-[10px]">
-                       <span className="text-muted-text font-medium">Status</span>
+                    <div className="bg-secondary-bg/50 px-4 py-3 rounded-2xl flex justify-between items-center text-[10px] border border-border-subtle/50">
+                       <span className="text-muted-text font-semibold uppercase tracking-wider">Account Status</span>
                        <span className="text-success font-bold flex items-center gap-1">
-                          <CheckCircle2 size={12} /> Verified
+                          <CheckCircle2 size={12} /> VERIFIED
                        </span>
                     </div>
-                    <div className="bg-secondary-bg/50 px-4 py-3 rounded-2xl flex justify-between items-center text-[10px]">
-                       <span className="text-muted-text font-medium">Clearance</span>
-                       <span className="text-accent font-bold uppercase">{profile?.role || "GUEST"}</span>
+                    <div className="bg-secondary-bg/50 px-4 py-3 rounded-2xl flex justify-between items-center text-[10px] border border-border-subtle/50">
+                       <span className="text-muted-text font-semibold uppercase tracking-wider">Institutional Role</span>
+                       <span className="text-brand font-bold uppercase">{profile?.role || "GUEST"}</span>
                     </div>
                  </div>
               </div>
 
+              {/* Refined Minimal Statistics Card */}
+              <div className="bg-white/[0.6] backdrop-blur-sm border border-border-subtle/50 rounded-3xl p-8 relative overflow-hidden">
+                <div className="flex items-center gap-3 mb-8">
+                  <CloudFog className="text-brand opacity-80" size={18} />
+                  <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent">Account Inventory</h4>
+                </div>
+                
+                <div className="space-y-10">
+                  <div>
+                    <p className="text-[10px] font-bold text-muted-text uppercase tracking-widest mb-1">Total Credits</p>
+                    <h3 className="text-3xl font-bold text-accent">{balances.reduce((acc, b) => acc + (b.amount || 0), 0).toLocaleString()} <span className="text-xs font-normal text-brand opacity-60 ml-1">HCR</span></h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-8 pt-8 border-t border-border-subtle/30">
+                    <div>
+                      <p className="text-[10px] text-muted-text font-bold uppercase tracking-widest mb-1">Projects</p>
+                      <p className="text-xl font-bold text-accent">{balances.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-text font-bold uppercase tracking-widest mb-1">Active RFQs</p>
+                      <p className="text-xl font-bold text-accent">{rfqs.filter(r => r.status === 'OPEN').length}</p>
+                    </div>
+                  </div>
+
+                  <Button 
+                    href="/dashboard"
+                    variant="secondary"
+                    className="w-full py-4 text-[10px] uppercase tracking-widest font-bold bg-white border border-border-subtle hover:bg-white text-accent flex items-center justify-center gap-2 shadow-xs transition-all"
+                  >
+                    Registry Dashboard <ArrowRight size={14} />
+                  </Button>
+                </div>
+              </div>
+
               <button 
                 onClick={handleLogout}
-                className="w-full flex items-center justify-between p-6 bg-white border border-border-subtle rounded-3xl text-warning font-bold hover:bg-warning/5 transition-colors group"
+                className="w-full flex items-center justify-between p-6 bg-white border border-border-subtle rounded-3xl text-warning font-bold hover:bg-warning/5 transition-all group"
               >
                 <div className="flex items-center gap-3 text-sm">
                    <LogOut size={20} /> Sign Out

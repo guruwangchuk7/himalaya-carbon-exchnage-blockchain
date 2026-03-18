@@ -113,28 +113,36 @@ export default function RetirementPage() {
                 Permanently withdraw Article 6.2 authorized units from Bhutan's national registry to claim your climate contribution. Every retirement generates a blockchain-verifiable sovereign certificate.
               </p>
 
-              {/* Portfolio Summary Card */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto mb-12">
-                <div className="bg-surface border border-border-subtle p-6 rounded-3xl shadow-sm text-center">
-                  <p className="label-meta mb-1 uppercase tracking-tighter">Institutional Profile</p>
-                  <h3 className="text-sm font-bold text-brand uppercase truncate px-2">
-                    {profile?.organization || "Institutional User"}
-                  </h3>
+              {/* Refined Minimal Sovereign Account Bar */}
+              <div className="max-w-4xl mx-auto mb-16 bg-white/[0.6] backdrop-blur-sm border border-border-subtle/50 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-6">
+                <div className="flex items-center gap-4 px-4 border-r border-border-subtle/30">
+                  <Shield size={18} className="text-brand opacity-80" />
+                  <div>
+                    <p className="text-[9px] font-bold text-muted-text uppercase tracking-widest leading-none mb-1">Institution</p>
+                    <p className="text-sm font-bold text-accent truncate max-w-[180px]">{profile?.organization || "Institutional User"}</p>
+                  </div>
                 </div>
-                <div className="bg-surface border border-border-subtle p-6 rounded-3xl shadow-sm text-center">
-                  <p className="label-meta mb-1">Total Credits</p>
-                  <h3 className="text-2xl font-bold text-foreground">
-                    {holdings.reduce((acc, h) => acc + h.amount, 0).toLocaleString()} <span className="text-sm font-medium text-muted-text">HCR</span>
-                  </h3>
+
+                <div className="flex items-center gap-8 flex-1 justify-center">
+                  <div className="text-center">
+                    <p className="text-[9px] font-bold text-muted-text uppercase tracking-widest mb-1">Balance</p>
+                    <p className="text-lg font-bold text-accent">{holdings.reduce((acc, h) => acc + h.amount, 0).toLocaleString()} <span className="text-[10px] text-brand">HCR</span></p>
+                  </div>
+                  <div className="w-px h-8 bg-border-subtle/30" />
+                  <div className="text-center">
+                    <p className="text-[9px] font-bold text-muted-text uppercase tracking-widest mb-1 text-center">Projects</p>
+                    <p className="text-lg font-bold text-accent">{holdings.length}</p>
+                  </div>
                 </div>
-                <div className="bg-surface border border-border-subtle p-6 rounded-3xl shadow-sm text-center">
-                  <p className="label-meta mb-1">Active Projects</p>
-                  <h3 className="text-2xl font-bold text-foreground">{holdings.length}</h3>
-                </div>
-                <div className="bg-surface border border-border-subtle p-6 rounded-3xl shadow-sm text-center flex flex-col items-center justify-center">
-                   <a href="/dashboard" className="text-xs font-bold text-brand hover:underline flex items-center gap-1 group">
-                      View Full Portfolio <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                   </a>
+
+                <div className="px-4">
+                  <Button 
+                    href="/dashboard"
+                    variant="secondary"
+                    className="py-2.5 px-6 text-[10px] font-bold uppercase tracking-widest border-border-subtle bg-white hover:bg-white text-accent flex items-center gap-2 shadow-xs"
+                  >
+                    Registry Dashboard <ArrowRight size={14} />
+                  </Button>
                 </div>
               </div>
             </header>
