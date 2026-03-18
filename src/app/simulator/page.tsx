@@ -26,6 +26,7 @@ export default function RegistrySimulator() {
     methodology: "VM0015",
     serialNumber: `SN-BT-${Date.now()}`,
     isArticle6Authorized: true,
+    sourceProofId: "BT-2024-X",
   });
 
   // Sync wallet address to recipient field
@@ -59,6 +60,7 @@ export default function RegistrySimulator() {
           methodology: formData.methodology,
           serialNumber: formData.serialNumber,
           registryLink: "https://bhutan.carbonregistry.gov",
+          sourceProofId: formData.sourceProofId,
         },
       };
 
@@ -203,6 +205,15 @@ export default function RegistrySimulator() {
                        className="w-full bg-secondary-bg border border-border-subtle rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 transition-colors"
                        value={formData.methodology}
                        onChange={e => setFormData({...formData, methodology: e.target.value})}
+                     />
+                  </div>
+                  <div>
+                     <label className="label-meta text-[10px] uppercase text-muted-text block mb-2">Source Proof ID</label>
+                     <input 
+                       className="w-full bg-secondary-bg border border-border-subtle rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 transition-colors"
+                       value={formData.sourceProofId}
+                       onChange={e => setFormData({...formData, sourceProofId: e.target.value})}
+                       placeholder="e.g. BT-2024-X"
                      />
                   </div>
                 </div>

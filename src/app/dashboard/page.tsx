@@ -1,8 +1,8 @@
 "use client";
 
 import { Navbar } from "@/components/Navbar";
-import { motion } from "framer-motion";
-import { Shield, BarChart3, Database, CheckCircle2, AlertCircle, Globe, Zap, RefreshCcw, Info, Fingerprint, FileText } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Shield, BarChart3, Database, CheckCircle2, AlertCircle, Globe, Zap, RefreshCcw, Info, Fingerprint, FileText, X, Download, ExternalLink, Award } from "lucide-react";
 import { Button } from "@/components/Button";
 import { useState, useEffect } from "react";
 import { RFQStatusPanel } from "@/components/RFQStatusPanel";
@@ -26,10 +26,113 @@ const StatCard = ({ label, value, icon: Icon, trend }: any) => (
   </div>
 );
 
+const SourceEvidenceModal = ({ isOpen, onClose, project }: { isOpen: boolean, onClose: () => void, project: any }) => {
+  const sourceProofId = (project.documentsUrl as any)?.sourceProofId || `BT-2024-X-${project.projectId.split('-').pop()}`;
+  
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-accent/60 backdrop-blur-sm"
+          />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="relative w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-hidden border border-brand/20"
+          >
+            {/* Modal Header */}
+            <div className="bg-brand text-white p-8 flex justify-between items-start relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-[80px] rounded-full -mr-20 -mt-20" />
+               <div className="relative z-10">
+                  <div className="flex items-center gap-3 mb-4">
+                     <Award className="text-brand-soft" size={24} />
+                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80">Official Verification Document</span>
+                  </div>
+                  <h2 className="text-2xl font-bold tracking-tight mb-1">Ministry of Energy Verification Report</h2>
+                  <p className="text-brand-soft/80 text-xs font-medium uppercase tracking-widest">Kingdom of Bhutan • National Carbon Registry</p>
+               </div>
+               <button onClick={onClose} className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors relative z-10">
+                  <X size={20} />
+               </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-10 space-y-10">
+               {/* Document Meta */}
+               <div className="grid grid-cols-2 gap-8 pb-8 border-b border-gray-100">
+                  <div className="space-y-1.5">
+                     <p className="text-[10px] uppercase font-bold text-muted-text tracking-widest">Document ID</p>
+                     <p className="text-sm font-mono font-bold text-accent">{sourceProofId}</p>
+                  </div>
+                  <div className="space-y-1.5">
+                     <p className="text-[10px] uppercase font-bold text-muted-text tracking-widest">Issuance Date</p>
+                     <p className="text-sm font-bold text-accent">March 15, 2026</p>
+                  </div>
+                  <div className="space-y-1.5">
+                     <p className="text-[10px] uppercase font-bold text-muted-text tracking-widest">Authorized By</p>
+                     <p className="text-sm font-bold text-accent">Dept. of Renewable Energy</p>
+                  </div>
+                  <div className="space-y-1.5">
+                     <p className="text-[10px] uppercase font-bold text-muted-text tracking-widest">Status</p>
+                     <span className="inline-flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-success px-3 py-1 bg-success/10 border border-success/20 rounded-full">
+                        <CheckCircle2 size={12} /> SECURED & VERIFIED
+                     </span>
+                  </div>
+               </div>
+
+               {/* Verification Body */}
+               <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 text-sm leading-relaxed text-slate-600">
+                  <h4 className="font-bold text-accent mb-3 flex items-center gap-2">
+                     <Shield className="text-brand" size={16} /> Auditor Findings
+                  </h4>
+                  <p>
+                     This certificate verifies that the <strong>{project.projectName}</strong> ({project.projectId}) has successfully completed 
+                     the national verification audit. The project adheres to Article 6.2 bilateral requirements and 
+                     all credits have been matched 1:1 against the physical sequestration assets held in the Sovereign Reserve.
+                  </p>
+               </div>
+
+               {/* Digital Fingersprint */}
+               <div className="space-y-4">
+                  <h4 className="text-[10px] uppercase font-bold text-muted-text tracking-widest flex items-center gap-2">
+                    <Fingerprint size={14} className="text-brand" /> Sovereign Digital Fingerprint
+                  </h4>
+                  <div className="bg-slate-900 text-blue-400 p-5 rounded-2xl font-mono text-[10px] break-all border border-blue-900/30">
+                     0x{Array.from({length: 64}, () => Math.floor(Math.random() * 16).toString(16)).join('')}
+                     <div className="mt-3 flex justify-between text-blue-400/50">
+                        <span>Algorithm: Ed25519 Sovereign</span>
+                        <span>Signed by: Registry Bridge HSM</span>
+                     </div>
+                  </div>
+               </div>
+
+               {/* Actions */}
+               <div className="flex gap-4 pt-4">
+                  <Button className="flex-1 py-4 flex items-center justify-center gap-2 text-xs font-bold">
+                     <Download size={14} /> Download PDF Report
+                  </Button>
+                  <Button variant="secondary" className="flex-1 py-4 flex items-center justify-center gap-2 text-xs font-bold border border-brand/20">
+                     <ExternalLink size={14} /> View on CAD Trust
+                  </Button>
+               </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
+
 const ProjectStatusRow = ({ project, onUpdate }: { project: any, onUpdate: () => void }) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [signingState, setSigningState] = useState<null | 'SIGNING' | 'VERIFIED'>(null);
-  const [showEvidence, setShowEvidence] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleAuthorize = async () => {
     setIsSyncing(true);
@@ -52,89 +155,60 @@ const ProjectStatusRow = ({ project, onUpdate }: { project: any, onUpdate: () =>
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 bg-background border border-border-subtle rounded-2xl group transition-all hover:border-brand/30">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className={`w-2 h-2 rounded-full ${project.isArticle6 ? 'bg-success' : 'bg-warning animate-pulse'}`} />
-          <div>
-            <p className="font-bold text-sm tracking-tight">{project.projectId}</p>
-            <p className="text-[10px] text-muted-text font-medium uppercase tracking-wider">{project.projectName} • {project.vintageYear}</p>
+    <>
+      <div className="flex flex-col gap-4 p-4 bg-background border border-border-subtle rounded-2xl group transition-all hover:border-brand/30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className={`w-2 h-2 rounded-full ${project.isArticle6 ? 'bg-success' : 'bg-warning animate-pulse'}`} />
+            <div>
+              <p className="font-bold text-sm tracking-tight">{project.projectId}</p>
+              <p className="text-[10px] text-muted-text font-medium uppercase tracking-wider">{project.projectName} • {project.vintageYear}</p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => setShowEvidence(!showEvidence)}
-            className="flex items-center gap-2 text-[10px] font-bold text-brand hover:text-accent transition-colors py-1 px-3 bg-brand/5 border border-brand/10 rounded-lg"
-          >
-            <Info size={12} /> {showEvidence ? 'Hide Source Evidence' : 'View Source Proofs'}
-          </button>
-          <div className="flex items-center gap-2">
-            {signingState === 'SIGNING' ? (
-              <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-brand px-3 py-1 bg-brand/5 border border-brand/20 rounded-full animate-pulse">
-                <RefreshCcw size={12} className="animate-spin" /> Validating Sovereign Signature...
-              </span>
-            ) : signingState === 'VERIFIED' ? (
-              <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-success px-3 py-1 bg-success/10 border border-success/20 rounded-full">
-                <CheckCircle2 size={12} /> Signature Verified by NCRC Bridge
-              </span>
-            ) : project.isArticle6 ? (
-              <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-success px-3 py-1 bg-success/5 border border-success/10 rounded-full">
-                <CheckCircle2 size={12} /> Article 6.2 Authorized
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-warning px-3 py-1 bg-warning/5 border border-warning/10 rounded-full">
-                <AlertCircle size={12} /> Pending Approval
-              </span>
-            )}
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 text-[10px] font-bold text-brand hover:text-accent transition-colors py-1.5 px-3 bg-brand/5 border border-brand/10 rounded-lg"
+            >
+              <FileText size={12} /> View Source Proofs
+            </button>
+            <div className="flex items-center gap-2">
+              {signingState === 'SIGNING' ? (
+                <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-brand px-3 py-1 bg-brand/5 border border-brand/20 rounded-full animate-pulse">
+                  <RefreshCcw size={12} className="animate-spin" /> Validating Sovereign Signature...
+                </span>
+              ) : signingState === 'VERIFIED' ? (
+                <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-success px-3 py-1 bg-success/10 border border-success/20 rounded-full">
+                  <CheckCircle2 size={12} /> Signature Verified by NCRC Bridge
+                </span>
+              ) : project.isArticle6 ? (
+                <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-success px-3 py-1 bg-success/5 border border-success/10 rounded-full">
+                  <CheckCircle2 size={12} /> Article 6.2 Authorized
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-warning px-3 py-1 bg-warning/5 border border-warning/10 rounded-full">
+                  <AlertCircle size={12} /> Pending Approval
+                </span>
+              )}
+            </div>
+            <Button 
+              variant="secondary" 
+              className="px-3 py-1.5 text-[9px] uppercase tracking-widest hidden group-hover:flex items-center gap-2"
+              onClick={handleAuthorize}
+              disabled={isSyncing}
+            >
+              {isSyncing ? <RefreshCcw size={10} className="animate-spin" /> : null}
+              {signingState === 'SIGNING' ? 'Signing...' : project.isArticle6 ? 'Revoke' : 'Authorize'}
+            </Button>
           </div>
-          <Button 
-            variant="secondary" 
-            className="px-3 py-1.5 text-[9px] uppercase tracking-widest hidden group-hover:flex items-center gap-2"
-            onClick={handleAuthorize}
-            disabled={isSyncing}
-          >
-            {isSyncing ? <RefreshCcw size={10} className="animate-spin" /> : null}
-            {signingState === 'SIGNING' ? 'Signing...' : project.isArticle6 ? 'Revoke' : 'Authorize'}
-          </Button>
         </div>
       </div>
-
-      {showEvidence && (
-        <motion.div 
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="bg-secondary-bg/20 rounded-xl p-4 border border-dashed border-border-subtle"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="flex flex-col gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-text flex items-center gap-2">
-                <FileText size={12} /> Registry Serial Proof
-              </span>
-              <p className="text-xs font-mono text-accent bg-background p-2 rounded-lg border border-border-subtle">
-                BT-NC-{project.projectId.split('-').pop()}-2024
-              </p>
-            </div>
-            <div className="flex flex-col gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-text flex items-center gap-2">
-                <Shield size={12} /> Verification Report ID
-              </span>
-              <p className="text-xs font-mono text-success bg-background p-2 rounded-lg border border-border-subtle hover:text-brand cursor-pointer">
-                NCRC-AUDIT-VER-{Math.floor(Math.random() * 9000) + 1000}
-              </p>
-            </div>
-            <div className="flex flex-col gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-text flex items-center gap-2">
-                <Fingerprint size={12} /> Ministry Digital Fingerprint
-              </span>
-              <p className="text-[9px] font-mono text-tertiary-text bg-background p-2 rounded-lg border border-border-subtle overflow-hidden text-ellipsis whitespace-nowrap">
-                sha256:7f8d9a2b1c4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z...
-              </p>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </div>
-
+      <SourceEvidenceModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        project={project} 
+      />
+    </>
   );
 };
 

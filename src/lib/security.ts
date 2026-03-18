@@ -21,6 +21,7 @@ export const RegistryMetadataSchema = z.object({
     methodology: z.string(),
     serialNumber: z.string(),
     registryLink: z.string().url().optional(),
+    sourceProofId: z.string().optional(),
   })
 });
 

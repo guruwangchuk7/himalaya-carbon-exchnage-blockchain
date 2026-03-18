@@ -68,7 +68,8 @@ export async function POST(request: Request) {
           where: { projectId: metadata.projectID },
           update: {
             totalVolume: { increment: Number(amount) },
-            status: "ISSUED_ON_CHAIN"
+            status: "ISSUED_ON_CHAIN",
+            documentsUrl: metadata.sourceProofId ? { sourceProofId: metadata.sourceProofId } : undefined
           },
           create: {
             projectId: metadata.projectID,
@@ -78,6 +79,7 @@ export async function POST(request: Request) {
             totalVolume: Number(amount),
             isArticle6: metadata.isArticle6Authorized ?? true,
             status: "ISSUED_ON_CHAIN",
+            documentsUrl: metadata.sourceProofId ? { sourceProofId: metadata.sourceProofId } : undefined,
             developerId: "00000000-0000-0000-0000-000000000000" // System Default
           }
         });
