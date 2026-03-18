@@ -3,7 +3,7 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { motion } from "framer-motion";
-import { Shield, Activity, Lock, TrendingUp, CheckCircle2, AlertCircle, Info, ExternalLink, RefreshCcw } from "lucide-react";
+import { Shield, Activity, Lock, TrendingUp, CheckCircle2, AlertCircle, Info, ExternalLink, RefreshCcw, CloudFog, Zap, Globe } from "lucide-react";
 import { Button } from "@/components/Button";
 import { useState, useEffect } from "react";
 import { useReadContract } from "wagmi";
@@ -175,23 +175,81 @@ export default function TransparencyPage() {
                     {auditLogs.length === 0 ? (
                       <div className="text-center py-10 text-muted-text italic">Synchronizing with blockchain...</div>
                     ) : (
-                      auditLogs.map((log, i) => (
-                        <div key={i} className={`flex items-center justify-between p-4 rounded-2xl border ${i === 0 && !isLoading ? 'bg-brand/5 border-brand/10' : 'bg-transparent border-transparent'}`}>
-                           <div className="flex items-center gap-4">
-                              <div className={`p-2 rounded-xl ${log.val.startsWith('+') ? 'bg-success/10 text-success' : 'bg-brand/10 text-brand'}`}>
-                                 <TrendingUp size={16} />
+                      <div className="relative">
+                        {/* Vertical Timeline Line */}
+                        <div className="absolute left-10 top-0 bottom-0 w-0.5 bg-border-subtle/30 -z-0" />
+                        
+                        <div className="space-y-4">
+                          {auditLogs.map((log, i) => {
+                            const isPositive = log.val.startsWith('+');
+                            const isRetirement = log.event.includes('RETIRE');
+                            const isMarket = log.event.includes('Market') || log.event.includes('ACQUISITION');
+                            
+                            return (
+                              <div key={i} className="group relative bg-white/50 backdrop-blur-sm border border-border-subtle/50 rounded-3xl p-6 transition-all hover:bg-white hover:shadow-hover-lift hover:-translate-y-1">
+                                 <div className="flex items-center justify-between gap-8">
+                                    <div className="flex items-center gap-8 relative z-10">
+                                       <div className={`w-16 h-16 rounded-[20px] flex items-center justify-center flex-shrink-0 shadow-sm border-2 transition-all group-hover:rotate-6 ${
+                                          isRetirement ? 'bg-success/5 text-success border-success/20' : 
+                                          isMarket ? 'bg-brand/5 text-brand border-brand/20' : 
+                                          'bg-accent/5 text-accent border-accent/20'
+                                       }`}>
+                                          {isRetirement ? <CloudFog size={28} /> : 
+                                           isMarket ? <Zap size={28} /> : 
+                                           <Globe size={28} />}
+                                       </div>
+                                       
+                                       <div className="flex flex-col gap-1 min-w-0">
+                                          <div className="flex items-center gap-3">
+                                             <span className="text-[11px] font-black text-muted-text border border-border-subtle px-2 py-0.5 rounded uppercase tracking-tighter">
+                                               {log.proj}
+                                             </span>
+                                             <span className={`text-[10px] font-bold uppercase tracking-widest ${
+                                               isRetirement ? 'text-success' : isMarket ? 'text-brand' : 'text-accent'
+                                             }`}>
+                                               {log.event.replace('INITIATE ', '').replace('Sync', 'Synchronization')}
+                                             </span>
+                                          </div>
+                                          <h3 className="text-lg font-bold text-accent truncate max-w-[300px] tracking-tight">
+                                             {log.projectName}
+                                          </h3>
+                                          <div className="flex items-center gap-2 text-[10px] text-tertiary-text font-bold">
+                                             <Activity size={10} className="text-brand" />
+                                             <span>{typeof log.time === 'string' ? log.time : formatRelativeTime(log.time)}</span>
+                                             <span className="opacity-30">•</span>
+                                             <span className="text-success flex items-center gap-1">
+                                               <CheckCircle2 size={10} /> Registry Verified
+                                             </span>
+                                          </div>
+                                       </div>
+                                    </div>
+
+                                    <div className="text-right flex flex-col items-end gap-3 flex-shrink-0">
+                                       <div className="flex flex-col items-end">
+                                          <div className={`text-xl font-mono font-black tracking-tighter flex items-center gap-1 ${
+                                             isPositive ? 'text-success' : 'text-brand'
+                                          }`}>
+                                             {log.val}
+                                             {log.val !== 'Verified' && log.val !== 'Success' && (
+                                               <span className="text-[10px] font-black text-muted-text ml-1">HCR</span>
+                                             )}
+                                          </div>
+                                       </div>
+                                       <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 text-[9px] font-black uppercase tracking-[0.2em] ${
+                                          log.status === 'Success' || log.status === 'Verified'
+                                          ? 'bg-success/10 text-success border-success/30'
+                                          : 'bg-brand/10 text-brand border-brand/30'
+                                       }`}>
+                                          <div className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                                          {log.status}
+                                       </div>
+                                    </div>
+                                 </div>
                               </div>
-                              <div>
-                                 <p className="text-sm font-bold">{log.event}: {log.proj}</p>
-                                 <p className="text-[10px] text-muted-text">{typeof log.time === 'string' ? log.time : formatRelativeTime(log.time)}</p>
-                              </div>
-                           </div>
-                           <div className="text-right">
-                              <p className={`font-mono font-bold ${log.val.startsWith('+') ? 'text-success' : 'text-brand'}`}>{log.val}</p>
-                              <p className="text-[10px] font-bold text-success uppercase">{log.status}</p>
-                           </div>
+                            );
+                          })}
                         </div>
-                      ))
+                      </div>
                     )}
                  </div>
 

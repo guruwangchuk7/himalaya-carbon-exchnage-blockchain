@@ -223,6 +223,18 @@ export async function initiateAcquisition(projectId: string, volume: number) {
           projectSlug: project.projectId,
           amount: volume
         }
+      }),
+      (prisma as any).auditLog.create({
+        data: {
+          action: "ASSET_ACQUISITION",
+          actorEmail: user?.email || "mock@ncrc.bt",
+          eventHash: `0x${Math.random().toString(16).slice(2, 66)}`,
+          metadata: { 
+            projectId: project.projectId, 
+            amount: volume,
+            status: "Sovereign Settlement"
+          }
+        }
       })
     ]);
 
@@ -256,9 +268,14 @@ export async function getTransparencyLogs() {
       })
     ]);
 
+    // Fetch projects to map IDs to Names for cleaner display
+    const projectList = await prisma.registryProject.findMany();
+    const projectMap = Object.fromEntries(projectList.map(p => [p.projectId, p.projectName]));
+
     const mappedAuditLogs = auditLogs.map((log: any) => ({
       event: log.action.replace(/_/g, " "),
       proj: log.metadata.projectID || log.metadata.projectId || "Sovereign Registry",
+      projectName: projectMap[log.metadata.projectID || log.metadata.projectId] || log.metadata.projectName || "Himalaya Project",
       val: log.metadata.amount ? `+${log.metadata.amount}` : "Verified",
       time: log.timestamp,
       status: "Verified"
@@ -267,6 +284,7 @@ export async function getTransparencyLogs() {
     const mappedRFQs = rfqs.map(log => ({
       event: log.status === "SETTLED_ON_CHAIN" ? "Retirement Sync" : "Market Sync",
       proj: log.project?.projectId || "BT-POOL",
+      projectName: log.project?.projectName || "Himalaya Project",
       val: `-${log.targetVolume}`,
       time: log.createdAt,
       status: log.status === "SETTLED_ON_CHAIN" ? "Success" : "Verified"
@@ -283,9 +301,9 @@ export async function getTransparencyLogs() {
     // FAIL-SOFT: Return realistic placeholder data so the demo never looks 'Empty'
     const now = new Date();
     const mockLogs = [
-      { event: "Mint Sync", proj: "BT-FOR-2024-01", val: "+5000", time: now, status: "Success" },
-      { event: "Market Sync", proj: "BT-HYDRO-22", val: "+1200", time: new Date(now.getTime() - 86400000), status: "Success" },
-      { event: "Registry Lock", proj: "BT-BIO-S1", val: "Verified", time: new Date(now.getTime() - 172800000), status: "Verified" },
+      { event: "Mint Sync", proj: "BT-FOR-2024-01", projectName: "Bhutan Forest Restoration", val: "+5000", time: now, status: "Success" },
+      { event: "Market Sync", proj: "BT-HYDRO-22", projectName: "Wangdue Hydropower Offset", val: "+1200", time: new Date(now.getTime() - 86400000), status: "Success" },
+      { event: "Registry Lock", proj: "BT-BIO-S1", projectName: "Sovereign Conservation Asset", val: "Verified", time: new Date(now.getTime() - 172800000), status: "Verified" },
     ];
     return { success: true, data: mockLogs, source: "DEMO_FALLBACK" };
   }
