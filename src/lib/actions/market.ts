@@ -383,12 +383,59 @@ export async function getUserProfile() {
     return { 
       success: true, 
       data: profile || { 
+        id: "mock-id",
+        userId: effectiveUserId || "mock-user-id",
         organization: "Institutional User",
-        role: "TRADER",
-        isAuthorized: true
+        role: "TRADER" as const,
+        isAuthorized: true,
+        walletAddress: null,
+        kycDocumentUrl: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
       } 
     };
   } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function upsertUserProfile(data: {
+  organization: string;
+  role: "TRADER" | "OPERATOR" | "AUDITOR";
+  walletAddress?: string;
+}) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // DEV BYPASS
+    let effectiveUserId = user?.id;
+    if (!effectiveUserId && process.env.NODE_ENV === 'development') {
+      effectiveUserId = "00000000-0000-0000-0000-000000000000";
+    }
+
+    if (!effectiveUserId) return { success: false, error: "Unauthorized" };
+
+    const profile = await prisma.profile.upsert({
+      where: { userId: effectiveUserId },
+      update: {
+        organization: data.organization,
+        role: data.role,
+        walletAddress: data.walletAddress || null,
+      },
+      create: {
+        userId: effectiveUserId,
+        organization: data.organization,
+        role: data.role,
+        walletAddress: data.walletAddress || null,
+        isAuthorized: true, // Auto-authorize for the demo
+      },
+    });
+
+    revalidatePath("/profile");
+    return { success: true, data: profile };
+  } catch (error: any) {
+    console.error("Profile Update Error:", error);
     return { success: false, error: error.message };
   }
 }
