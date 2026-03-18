@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Search, Filter, ArrowUpDown, Shield, Info, ExternalLink, BarChart3, MessageSquare, Zap, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/Button";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const projectPools = [
   {
@@ -26,7 +27,7 @@ const projectPools = [
   }
 ];
 
-const RFQModal = ({ isOpen, onClose, project }: any) => {
+const RFQModal = ({ isOpen, onClose, project, router }: any) => {
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -38,6 +39,7 @@ const RFQModal = ({ isOpen, onClose, project }: any) => {
       const result = await submitRFQ(project.id, parseInt(amount));
       if (result.success) {
         setSuccess(true);
+        router.refresh();
       } else {
         alert(result.error || "RFQ submission failed.");
       }
@@ -101,7 +103,7 @@ const RFQModal = ({ isOpen, onClose, project }: any) => {
   );
 };
 
-const AcquisitionModal = ({ isOpen, onClose, project, onVerificationNeeded }: any) => {
+const AcquisitionModal = ({ isOpen, onClose, project, onVerificationNeeded, router }: any) => {
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -113,6 +115,7 @@ const AcquisitionModal = ({ isOpen, onClose, project, onVerificationNeeded }: an
       const result = await initiateAcquisition(project.id, parseInt(amount));
       if (result.success) {
         setSuccess(true);
+        router.refresh();
       } else if (result.error === "UNAUTHORIZED") {
         onVerificationNeeded(result.message);
         onClose();
@@ -242,6 +245,7 @@ const ProjectCard = ({ project, onRFQ, onAcquire }: { project: any, onRFQ: any, 
 );
 
 export function MarketplaceClient({ initialProjects }: { initialProjects: any[] }) {
+  const router = useRouter();
   const [filter, setFilter] = useState("All");
   const [rfqProject, setRfqProject] = useState<any>(null);
   const [acquireProject, setAcquireProject] = useState<any>(null);
@@ -380,6 +384,7 @@ export function MarketplaceClient({ initialProjects }: { initialProjects: any[] 
         isOpen={!!rfqProject} 
         onClose={() => setRfqProject(null)} 
         project={rfqProject} 
+        router={router}
       />
 
       <AcquisitionModal 
@@ -387,6 +392,7 @@ export function MarketplaceClient({ initialProjects }: { initialProjects: any[] 
         onClose={() => setAcquireProject(null)} 
         project={acquireProject} 
         onVerificationNeeded={(msg: string) => showToast(msg, 'error')}
+        router={router}
       />
 
       {/* Toast Notification */}

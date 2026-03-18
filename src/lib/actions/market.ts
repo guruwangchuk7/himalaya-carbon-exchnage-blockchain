@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "../db/prisma";
+import { revalidatePath } from "next/cache";
 
 
 
@@ -124,6 +125,8 @@ export async function submitRFQ(projectId: string, volume: number) {
       }
     });
 
+    revalidatePath("/dashboard");
+
     return { success: true, rfqId: rfq.id };
   } catch (error: any) {
     console.error("RFQ Submission Error:", error);
@@ -189,16 +192,27 @@ export async function initiateAcquisition(projectId: string, volume: number) {
     const project = await ensureProject(projectId);
     if (!project) return { success: false, error: "Project not found in registry." };
 
-    // 3. Create the transaction record
-    const acquisition = await prisma.rFQ.create({
-      data: {
-        buyerId: profile.id,
-        projectId: project.id, // Linking to the CUID internal ID
-        targetVolume: volume,
-        targetPriceCents: 2000,
-        status: "MATCHED"
-      }
-    });
+    // 3. Create the transaction record & Decrement available volume
+    const [acquisition] = await prisma.$transaction([
+      prisma.rFQ.create({
+        data: {
+          buyerId: profile.id,
+          projectId: project.id, 
+          targetVolume: volume,
+          targetPriceCents: 2000,
+          status: "MATCHED"
+        }
+      }),
+      prisma.registryProject.update({
+        where: { id: project.id },
+        data: {
+          totalVolume: { decrement: volume }
+        }
+      })
+    ]);
+
+    revalidatePath("/marketplace");
+    revalidatePath("/dashboard");
 
     return { success: true, acquisitionId: acquisition.id };
   } catch (error: any) {

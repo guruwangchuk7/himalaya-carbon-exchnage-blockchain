@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db/prisma";
 import { walletClient, account, publicClient } from "@/lib/blockchain";
 import { REGISTRY_ABI, REGISTRY_ADDRESS } from "@/constants";
 import { HimalayaSecurity } from "@/lib/security";
+import { revalidatePath } from "next/cache";
 
 /**
  * Himalaya Carbon Engine: Sovereign Administrative Actions
@@ -55,6 +56,7 @@ export async function updateParticipantAuthorization(address: string, status: bo
     // Record Sovereign Security Audit
     await HimalayaSecurity.logAuditAction("PORTAL_WHITELIST_UPDATE", { address, status, hash, admin: user.email });
 
+    revalidatePath("/dashboard/admin");
 
     return { success: true, hash };
   } catch (error: any) {

@@ -6,9 +6,11 @@ import { motion } from "framer-motion";
 import { Shield, UserCheck, UserPlus, Users, CheckCircle2, XCircle, RefreshCcw, Search, BarChart3 } from "lucide-react";
 import { Button } from "@/components/Button";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { updateParticipantAuthorization } from "@/app/actions/sovereign";
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [participants, setParticipants] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newParticipant, setNewParticipant] = useState("");
@@ -34,13 +36,12 @@ export default function AdminDashboard() {
   const handleUpdateStatus = async (address: string, status: boolean) => {
     setIsUpdating(true);
     try {
-      // Execute the Secure Server Action (Bypasses API/HMAC requirement)
       const data = await updateParticipantAuthorization(address, status);
 
       if (data.success && data.hash) {
         alert(`Sovereign Authorization Submitted: ${data.hash}`);
-        // Refresh after a delay to allow for tx processing
-        setTimeout(fetchParticipants, 5000);
+        fetchParticipants();
+        router.refresh();
       } else {
         alert(`Failed to update status: ${data.error}`);
       }

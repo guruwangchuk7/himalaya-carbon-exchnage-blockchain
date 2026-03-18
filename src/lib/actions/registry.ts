@@ -2,6 +2,7 @@
 
 import { prisma } from "../db/prisma";
 import { HimalayaSecurity } from "../security";
+import { revalidatePath } from "next/cache";
 
 export async function getRegistryProjects() {
   try {
@@ -26,6 +27,9 @@ export async function authorizeProjectArticle6(id: string, isAuthorized: boolean
       projectId: project.projectId, 
       status: isAuthorized 
     });
+    
+    revalidatePath("/dashboard");
+    revalidatePath("/marketplace");
 
     return { success: true, project };
   } catch (error: any) {
