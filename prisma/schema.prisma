@@ -116,3 +116,27 @@ enum RFQStatus {
   SETTLED_ON_CHAIN
   CANCELLED
 }
+
+model Payment {
+  id                    String   @id @default(cuid())
+  userId                String?  // Supabase User ID (optional for Guest/Institutional checkouts)
+  amount                Int      // in cents
+  currency              String   @default("usd")
+  status                PaymentStatus @default(PENDING)
+  stripeSessionId       String   @unique
+  stripePaymentIntentId String?  @unique
+  customerEmail         String?
+  metadata              Json?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId])
+  @@index([stripeSessionId])
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}

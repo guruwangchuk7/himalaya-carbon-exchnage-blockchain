@@ -16,6 +16,8 @@ const NavLink = ({ href, children }: { href: string; children: React.ReactNode }
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 
+import { WalletDropdown } from "./WalletDropdown";
+
 export const Navbar = () => {
   return (
     <nav aria-label="Primary" className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 py-6">
@@ -46,9 +48,7 @@ export const Navbar = () => {
         </ul>
         
         <div className="flex items-center gap-4">
-          <div className="hidden sm:block">
-            <ConnectButton accountStatus="avatar" chainStatus="icon" showBalance={false} />
-          </div>
+          <WalletDropdown />
           <Button
             href="/dashboard"
             className="px-5 py-2 text-sm"

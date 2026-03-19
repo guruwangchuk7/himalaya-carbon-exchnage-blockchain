@@ -7,12 +7,15 @@ import { Check } from "lucide-react";
 import { useId, useState } from "react";
 import { ScrollReveal } from "./ScrollReveal";
 
+import { StripePaymentButton } from "./StripePaymentButton";
+
 type AccessStage = "sandbox" | "production";
 
 type Plan = {
   name: string;
   description: string;
   features: string[];
+  amount: number; // in cents
   highlighted?: boolean;
   trend?: {
     label: string;
@@ -32,6 +35,7 @@ const plans: Plan[] = [
     name: "Public Auditors",
     description: "For the public, external auditors, regulatory bodies, and media reviewing ecosystem integrity.",
     features: ["Proof of reserve monitoring", "Transparent burn audit logs", "Reserve health index access"],
+    amount: 10000,
     trend: { label: "Providing cryptographic proof of asset backing", tone: "warning" },
     stageCopy: {
       sandbox: { headline: "Public Proof", sublabel: "Initial ecosystem review" },
@@ -42,6 +46,7 @@ const plans: Plan[] = [
     name: "Institutional Traders",
     description: "For corporations, carbon offset seekers, and high-volume brokers.",
     features: ["Individual ERC-1155 vintage trading", "ERC-20 Carbon Pool liquidity", "Institutional RFQ capabilities"],
+    amount: 50000,
     highlighted: true,
     trend: { label: "Best fit for live market fulfillment", tone: "success" },
     stageCopy: {
@@ -53,6 +58,7 @@ const plans: Plan[] = [
     name: "Sovereign Operators",
     description: "For National Carbon Registry Officials and the Ministry of Energy.",
     features: ["Secure minting relayer controls", "Institutional whitelist auth", "ITMO compliance monitoring"],
+    amount: 150000,
     trend: { label: "Built for true national-scale governance", tone: "success" },
     stageCopy: {
       sandbox: { headline: "Admin SDK", sublabel: "Partner testing environment" },
@@ -160,19 +166,10 @@ function AccessCard({ plan, stage, index }: { plan: Plan; stage: AccessStage; in
         ))}
       </ul>
 
-      <Button
-        href={plan.name === "Observer" ? "#features" : "#subscribe"}
-        variant={plan.highlighted ? "primary" : "secondary"}
-        className="mt-auto w-full border border-border-subtle"
-        aria-label={`${plan.name} ${stage} access`}
-        onClick={() => {
-          if (plan.name !== "Observer") {
-            console.log(`Access requested for ${plan.name} in ${stage} stage.`);
-          }
-        }}
-      >
-        {plan.name === "Observer" ? "Review brief" : "Request access"}
-      </Button>
+      <StripePaymentButton
+        amount={plan.amount}
+        planName={plan.name}
+      />
     </motion.article>
   );
 }
