@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "./Button";
 import Image from "next/image";
 import { useRef } from "react";
+import homeImage from "@/assets/images/home.png";
 
 export const Hero = () => {
   const targetRef = useRef<HTMLDivElement>(null);
@@ -81,7 +82,7 @@ export const Hero = () => {
         >
           <div className="absolute inset-0 bg-white/20 backdrop-blur-xl -z-10" />
           <Image
-            src="/JeI7uULY0av9DxD7q7NVLTuoNc.avif"
+            src={homeImage}
             alt="Himalaya Carbon platform overview"
             width={1200}
             height={800}
