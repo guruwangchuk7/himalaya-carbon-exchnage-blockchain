@@ -7,12 +7,19 @@ import { Shield, Mail, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [organization, setOrganization] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Role context from URL
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const requestedRole = searchParams?.get("role") || "buyer";
+  const shouldSignUp = searchParams?.get("signup") === "true";
+  const isAdminPortal = requestedRole === "admin";
+
+  const [isLogin, setIsLogin] = useState(!shouldSignUp);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,11 +54,11 @@ export default function LoginPage() {
         setError(error.message);
         setLoading(false);
       } else if (data.user) {
-        // Initial profile creation is usually handled by a Supabase Trigger, 
-        // but for this dev environment we'll handle it via a component or expect the user to refresh.
-        alert("Account created! You can now sign in.");
+        // Success! Automatic switch to login mode with the email pre-filled
+        alert("Account created! Please sign in with your credentials.");
         setIsLogin(true);
         setLoading(false);
+        // We keep the email in the state for convenience
       }
     }
   };
@@ -67,12 +74,14 @@ export default function LoginPage() {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-center text-foreground mb-2">
-            {isLogin ? "Sovereign Access" : "Institutional Onboarding"}
+            {isAdminPortal ? "Government Personnel Access" : isLogin ? "Sovereign Access" : "Institutional Onboarding"}
           </h1>
           <p className="text-center text-muted-text mb-8 text-sm">
-            {isLogin 
-              ? "Sign in to manage the National Registry Bridge." 
-              : "Register your organization to participate in the Carbon Exchange."}
+            {isAdminPortal 
+              ? "Confidential access for National Carbon Registry officials."
+              : isLogin 
+                ? "Sign in to manage your carbon portfolio." 
+                : "Register your organization to participate in the Carbon Exchange."}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -141,12 +150,22 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <button 
-            onClick={() => setIsLogin(!isLogin)}
-            className="w-full mt-6 text-sm text-brand font-medium hover:underline"
-          >
-            {isLogin ? "Need to register your organization?" : "Already have an account? Sign in"}
-          </button>
+          {!isAdminPortal && (
+            <button 
+              onClick={() => setIsLogin(!isLogin)}
+              className="w-full mt-6 text-sm text-brand font-medium hover:underline"
+            >
+              {isLogin ? "Need to register your organization?" : "Already have an account? Sign in"}
+            </button>
+          )}
+
+          {isAdminPortal && (
+             <div className="mt-6 text-center">
+                <p className="text-[10px] text-muted-text uppercase tracking-widest font-bold">
+                   Registration disabled for secure portal
+                </p>
+             </div>
+          )}
 
           <div className="mt-6 pt-6 border-t border-border-subtle text-center">
             <p className="text-xs text-muted-text">
@@ -155,6 +174,19 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      {process.env.NODE_ENV === "development" && (
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+          <button 
+            onClick={() => {
+              // Master Bypass to Dashboard
+              window.location.href = "/dashboard?bypass=admin";
+            }}
+            className="px-6 py-3 bg-brand text-accent text-xs font-bold rounded-full shadow-lg hover:scale-105 transition-all"
+          >
+            ⚡ MASTER OVERRIDE: Enter Admin Dashboard
+          </button>
+        </div>
+      )}
     </main>
   );
 }

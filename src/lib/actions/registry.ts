@@ -17,7 +17,13 @@ export async function getRegistryProjects() {
 
 export async function authorizeProjectArticle6(id: string, isAuthorized: boolean) {
   try {
-    // In production, verify admin session
+    const { getUserProfile } = await import("./market");
+    const profRes = await getUserProfile();
+    
+    if (!profRes.success || String(profRes.data?.role) !== "GOVERNMENT_ADMIN") {
+       return { success: false, error: "ACCESS_DENIED", message: "Exclusive Government Registry access required for Article 6 authorization." };
+    }
+
     const project = await prisma.registryProject.update({
       where: { id },
       data: { isArticle6: isAuthorized }

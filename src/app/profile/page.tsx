@@ -196,25 +196,12 @@ export default function ProfilePage() {
 
                   <div>
                     <label className="label-meta text-xs block mb-3 uppercase font-bold tracking-wider">Account Role</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      {[
-                        { id: "TRADER", label: "Buyer", desc: "For buying and retiring credits." },
-                        { id: "OPERATOR", label: "Seller", desc: "For project developers." },
-                        { id: "AUDITOR", label: "Auditor", desc: "Read-only transparency access." }
-                      ].map((r) => (
-                        <button
-                          key={r.id}
-                          onClick={() => setRole(r.id as any)}
-                          className={`p-3 rounded-2xl border text-left transition-all ${
-                            role === r.id 
-                              ? "border-brand bg-brand-soft ring-2 ring-brand/10" 
-                              : "border-border-subtle hover:border-brand/40"
-                          }`}
-                        >
-                          <p className={`font-bold text-[10px] mb-1 leading-tight ${role === r.id ? "text-brand" : "text-accent"}`}>{r.label}</p>
-                          <p className="text-[9px] text-muted-text leading-tight">{r.desc}</p>
-                        </button>
-                      ))}
+                    <div className="bg-brand-soft/20 p-4 rounded-2xl border border-brand/5">
+                      <p className="text-brand text-xs font-bold leading-relaxed flex items-center gap-2">
+                        <Shield className="w-4 h-4" /> 
+                        {profile?.role === "GOVERNMENT_ADMIN" ? "Registry Administrator" : "Institutional Buyer"}
+                      </p>
+                      <p className="text-[10px] text-muted-text mt-1">Role is locked for security. Contacts admins to change your role.</p>
                     </div>
                   </div>
 

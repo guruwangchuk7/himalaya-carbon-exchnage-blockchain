@@ -10,9 +10,10 @@ datasource db {
 model Profile {
   id             String   @id @default(cuid())
   userId         String   @unique // Supabase Auth User ID
+  email          String?  @unique
   walletAddress  String?  @unique
   organization   String
-  role           Role     @default(TRADER)
+  role           Role     @default(BUYER)
   isAuthorized   Boolean  @default(false)
   kycDocumentUrl String?
   createdAt      DateTime @default(now())
@@ -21,10 +22,13 @@ model Profile {
 }
 
 enum Role {
+  BUYER
+  GOVERNMENT_ADMIN
   TRADER
   OPERATOR
   AUDITOR
 }
+
 
 model RegistryProject {
   id                 String             @id @default(cuid())

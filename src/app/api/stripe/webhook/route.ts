@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
           // });
         }
         
-        console.log(`✅ Payment SUCCEEDED for session ${session.id}`);
+        console.log(`Payment SUCCEEDED for session ${session.id}`);
         break;
       }
 
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
             data: { status: "FAILED" },
           });
         }
-        console.log(`❌ Payment FAILED for session ${sessionId}`);
+        console.log(`Payment FAILED for session ${sessionId}`);
         break;
       }
 

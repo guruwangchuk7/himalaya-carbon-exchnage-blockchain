@@ -30,20 +30,46 @@ async function ensureProject(projectIdStr: string) {
   return project;
 }
 
-async function ensureProfile(userId: string) {
-  let profile = await prisma.profile.findUnique({
+async function ensureProfile(userId: string, role: string = "BUYER", organization?: string, email?: string): Promise<any> {
+  const profileTable = (prisma as any).profile;
+  
+  let profile = await profileTable.findUnique({
     where: { userId }
   });
 
+  // AUTO-HEALING: If it's the bypass user and was created with wrong role, fix it
+  if (profile && userId === "00000000-0000-0000-0000-admin-bypass" && profile.role !== "GOVERNMENT_ADMIN") {
+      profile = await profileTable.update({
+          where: { userId },
+          data: { role: "GOVERNMENT_ADMIN" }
+      });
+  }
+
   if (!profile) {
-    // Create a default profile if it doesn't exist (for dev/test purposes)
-    profile = await prisma.profile.create({
+    console.log(`[AUTH] Synchronizing new institutional profile: ${userId} (${email || "No email"})`);
+    
+    // SERVER SIDE GUARD: Prevent public signup from becoming Admin, 
+    // BUT allow it if in development mode (for our bypass)
+    let assignedRole = role;
+    if (assignedRole === "GOVERNMENT_ADMIN" && process.env.NODE_ENV !== 'development') {
+        assignedRole = "BUYER";
+    }
+    
+    profile = await profileTable.create({
       data: {
         userId,
-        organization: "Institutional Test Organization",
-        isAuthorized: true, // Default to true for testing purposes
-        role: "TRADER"
+        email,
+        organization: organization || "Institutional Organization",
+        isAuthorized: true, 
+        role: assignedRole
       }
+    });
+    console.log(`✅ MySQL record created for ${userId}`);
+  } else if (email && !profile.email) {
+    // Healing: Sync email to existing profile if missing
+    await profileTable.update({
+      where: { userId },
+      data: { email }
     });
   }
 
@@ -363,36 +389,36 @@ export async function getReserveStats() {
   }
 }
 
-export async function getUserProfile() {
+export async function getUserProfile(bypassRole?: string) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     // DEV BYPASS: Allow mock user if in development and session is missing
     let effectiveUserId = user?.id;
-    if (!effectiveUserId && process.env.NODE_ENV === 'development') {
-      effectiveUserId = "00000000-0000-0000-0000-000000000000";
+    let effectiveRole = "BUYER";
+    let effectiveEmail = user?.email || "mock@himalaya.bt";
+
+    // DEV BYPASS: Allow mock user for testing
+    if (bypassRole === "admin") {
+      console.log("🛠️ BYPASS TRIGGERED: Admin Mode");
+      effectiveUserId = "00000000-0000-0000-0000-admin-bypass";
+      effectiveRole = "GOVERNMENT_ADMIN";
+      effectiveEmail = "guruwangchuk1234@gmail.com";
+    } else if (process.env.NODE_ENV === 'development' && !effectiveUserId) {
+        effectiveUserId = "00000000-0000-0000-0000-000000000000";
     }
 
     if (!effectiveUserId) return { success: false, error: "Unauthorized" };
 
-    const profile = await prisma.profile.findUnique({
-      where: { userId: effectiveUserId }
-    });
+    const organization = (user?.user_metadata as any)?.organization;
+    const profile = await ensureProfile(effectiveUserId, effectiveRole, organization, effectiveEmail);
+
+    console.log(`👤 Profile Locked: ${profile.email} [Role: ${profile.role}]`);
 
     return { 
       success: true, 
-      data: profile || { 
-        id: "mock-id",
-        userId: effectiveUserId || "mock-user-id",
-        organization: "Institutional User",
-        role: "TRADER" as const,
-        isAuthorized: true,
-        walletAddress: null,
-        kycDocumentUrl: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      } 
+      data: profile
     };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -401,7 +427,7 @@ export async function getUserProfile() {
 
 export async function upsertUserProfile(data: {
   organization: string;
-  role: "TRADER" | "OPERATOR" | "AUDITOR";
+  role: "BUYER" | "GOVERNMENT_ADMIN" | "TRADER" | "OPERATOR" | "AUDITOR";
   walletAddress?: string;
 }) {
   try {
@@ -416,19 +442,31 @@ export async function upsertUserProfile(data: {
 
     if (!effectiveUserId) return { success: false, error: "Unauthorized" };
 
+    // Security: Fetch existing profile to check role
+    const existingProfile = await prisma.profile.findUnique({
+      where: { userId: effectiveUserId }
+    });
+
+    // Prevent role escalation from BUYER to GOVERNMENT_ADMIN via API
+    let finalRole = data.role as any;
+    const currentRoleStr = String(existingProfile?.role);
+    if (currentRoleStr === "BUYER" && data.role === "GOVERNMENT_ADMIN") {
+      finalRole = "BUYER" as any;
+    }
+
     const profile = await prisma.profile.upsert({
       where: { userId: effectiveUserId },
       update: {
         organization: data.organization,
-        role: data.role,
+        role: finalRole,
         walletAddress: data.walletAddress || null,
       },
       create: {
         userId: effectiveUserId,
         organization: data.organization,
-        role: data.role,
+        role: finalRole,
         walletAddress: data.walletAddress || null,
-        isAuthorized: true, // Auto-authorize for the demo
+        isAuthorized: true,
       },
     });
 

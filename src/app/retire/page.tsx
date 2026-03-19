@@ -3,7 +3,7 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, CheckCircle2, CloudFog, Award, ArrowRight, Download, History, ExternalLink, Info, RefreshCcw } from "lucide-react";
+import { Shield, CheckCircle2, CloudFog, Award, ArrowRight, Download, History, ExternalLink, Info, RefreshCcw, Lock } from "lucide-react";
 import { Button } from "@/components/Button";
 import { useState, useEffect } from "react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
@@ -98,6 +98,27 @@ export default function RetirementPage() {
       setIsProcessing(false);
     }
   };
+
+  if (profile?.role === "GOVERNMENT_ADMIN") {
+    return (
+      <main className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
+        <Navbar />
+        <div className="max-w-md bg-white border border-border-subtle p-12 rounded-[48px] shadow-2xl">
+          <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-8 border border-red-100 shadow-sm">
+            <Lock size={32} />
+          </div>
+          <h1 className="text-2xl font-bold text-accent mb-4 tracking-tight leading-tight">Retirement Restricted</h1>
+          <p className="text-muted-text text-sm mb-10 leading-relaxed font-medium">
+            Registry Administration accounts are restricted from retiring carbon credits to maintain institutional integrity. Please use a Buyer account for retirement.
+          </p>
+          <Button href="/dashboard" className="w-full py-4 text-sm font-bold shadow-md">
+            Return to Admin Dashboard
+          </Button>
+        </div>
+        <Footer />
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background">

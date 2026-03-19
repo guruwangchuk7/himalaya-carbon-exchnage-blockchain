@@ -186,7 +186,7 @@ const AcquisitionModal = ({ isOpen, onClose, project, onVerificationNeeded, rout
   );
 };
 
-const ProjectCard = ({ project, onRFQ, onAcquire }: { project: any, onRFQ: any, onAcquire: any }) => (
+const ProjectCard = ({ project, onRFQ, onAcquire, role }: { project: any, onRFQ: any, onAcquire: any, role: string | null }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
@@ -227,18 +227,27 @@ const ProjectCard = ({ project, onRFQ, onAcquire }: { project: any, onRFQ: any, 
       </div>
       
       <div className="pt-6 border-t border-border-subtle flex flex-col gap-3">
-        <Button 
-          className="w-full py-4 text-xs flex items-center justify-center gap-2"
-          onClick={onAcquire}
-        >
-          Acquire Instant <Zap size={14} />
-        </Button>
-        <button 
-          onClick={onRFQ}
-          className="w-full py-4 text-[10px] font-bold uppercase tracking-widest text-muted-text hover:text-brand flex items-center justify-center gap-2 transition-colors border border-dashed border-border-subtle rounded-2xl"
-        >
-          Institutional RFQ <MessageSquare size={14} />
-        </button>
+        {role === "GOVERNMENT_ADMIN" ? (
+          <div className="p-4 bg-brand-soft/20 rounded-2xl border border-brand/5">
+            <p className="text-[10px] font-bold text-brand uppercase tracking-widest text-center">Registry Admin View</p>
+            <p className="text-[9px] text-muted-text text-center mt-1">Acquisition restricted for government accounts.</p>
+          </div>
+        ) : (
+          <>
+            <Button 
+              className="w-full py-4 text-xs flex items-center justify-center gap-2"
+              onClick={onAcquire}
+            >
+              Acquire Instant <Zap size={14} />
+            </Button>
+            <button 
+              onClick={onRFQ}
+              className="w-full py-4 text-[10px] font-bold uppercase tracking-widest text-muted-text hover:text-brand flex items-center justify-center gap-2 transition-colors border border-dashed border-border-subtle rounded-2xl"
+            >
+              Institutional RFQ <MessageSquare size={14} />
+            </button>
+          </>
+        )}
       </div>
     </div>
   </motion.div>
@@ -249,7 +258,17 @@ export function MarketplaceClient({ initialProjects }: { initialProjects: any[] 
   const [filter, setFilter] = useState("All");
   const [rfqProject, setRfqProject] = useState<any>(null);
   const [acquireProject, setAcquireProject] = useState<any>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [toast, setToast] = useState<{message: string, isVisible: boolean, type?: 'info' | 'error'}>({ message: "", isVisible: false });
+
+  useState(() => {
+    const fetchRole = async () => {
+       const { getUserProfile } = await import("@/lib/actions/market");
+       const res = await getUserProfile();
+       if (res.success && res.data) setRole(String(res.data.role));
+    }
+    fetchRole();
+  });
 
   const showToast = (msg: string, type: 'info' | 'error' = 'info') => {
     setToast({ message: msg, isVisible: true, type });
@@ -352,12 +371,20 @@ export function MarketplaceClient({ initialProjects }: { initialProjects: any[] 
                    </div>
 
                    <div className="flex flex-col sm:flex-row gap-4">
-                      <Button className="flex-1 py-5 flex items-center justify-center gap-2 bg-accent text-white shadow-md">
-                         Trade on DEX <ExternalLink size={16} />
-                      </Button>
-                      <Button variant="secondary" className="flex-1 py-5 flex items-center justify-center gap-2 bg-surface hover:bg-surface/80">
-                         Mint / Redeem <Shield size={16} />
-                      </Button>
+                      {role === "GOVERNMENT_ADMIN" ? (
+                        <div className="flex-1 p-4 bg-brand-soft/20 rounded-2xl border border-brand/5 text-center">
+                          <p className="text-[10px] font-bold text-brand uppercase tracking-widest">Sovereign Pool Overseer</p>
+                        </div>
+                      ) : (
+                        <>
+                          <Button className="flex-1 py-5 flex items-center justify-center gap-2 bg-accent text-white shadow-md">
+                            Trade on DEX <ExternalLink size={16} />
+                          </Button>
+                          <Button variant="secondary" className="flex-1 py-5 flex items-center justify-center gap-2 bg-surface hover:bg-surface/80">
+                            Mint / Redeem <Shield size={16} />
+                          </Button>
+                        </>
+                      )}
                    </div>
                 </div>
               ))}
@@ -374,6 +401,7 @@ export function MarketplaceClient({ initialProjects }: { initialProjects: any[] 
                  project={project} 
                  onRFQ={() => setRfqProject(project)} 
                  onAcquire={() => setAcquireProject(project)}
+                 role={role}
                />
              ))}
             </motion.div>

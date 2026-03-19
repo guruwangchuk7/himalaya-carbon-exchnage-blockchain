@@ -4,6 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "./Button";
 import { motion } from "framer-motion";
+import { getUserProfile } from "@/lib/actions/market";
+import { useState, useEffect } from "react";
+import { WalletDropdown } from "./WalletDropdown";
 
 const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
   <Link
@@ -14,11 +17,23 @@ const NavLink = ({ href, children }: { href: string; children: React.ReactNode }
   </Link>
 );
 
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-
-import { WalletDropdown } from "./WalletDropdown";
-
 export const Navbar = () => {
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchRole() {
+      // Handle bypass param for local testing
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const bypass = params?.get("bypass") || undefined;
+      
+      const res = await getUserProfile(bypass as any);
+      if (res.success && res.data) {
+        setRole(String(res.data.role));
+      }
+    }
+    fetchRole();
+  }, []);
+
   return (
     <nav aria-label="Primary" className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 py-6">
       <motion.div
@@ -40,21 +55,23 @@ export const Navbar = () => {
           </span>
         </Link>
         
-        <ul className="hidden md:flex items-center gap-8" role="list">
+        <ul className="flex items-center gap-4 md:gap-8" role="list">
           <li><NavLink href="/marketplace">Marketplace</NavLink></li>
           <li><NavLink href="/transparency">Transparency</NavLink></li>
           <li><NavLink href="/dashboard">Dashboard</NavLink></li>
-          <li><NavLink href="/retire">Retire Credits</NavLink></li>
+          {role === "BUYER" && (
+            <li><NavLink href="/retire">Retire Credits</NavLink></li>
+          )}
         </ul>
         
         <div className="flex items-center gap-4">
           <WalletDropdown />
           <Button
-            href="/dashboard"
+            href="/access"
             className="px-5 py-2 text-sm"
             aria-label="Access registry dashboard"
           >
-            Access registry
+            {role === "GOVERNMENT_ADMIN" ? "National Carbon Registry" : "Access registry"}
           </Button>
         </div>
       </motion.div>
