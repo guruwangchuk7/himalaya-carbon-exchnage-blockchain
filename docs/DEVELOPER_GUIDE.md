@@ -1,69 +1,47 @@
 # Developer Guide
 
-This guide covers the standards, tools, and workflows for engineers contributing to the **Himalaya Carbon Exchange (HCE)**.
+This guide ensures engineers maintain architectural consistency against the existing infrastructure bounds of the **Himalaya Carbon Exchange (HCE)**.
 
 ---
 
-## 🎨 Coding Standards
+## 🎨 Design & Data Standards
 
-### 1. Terminology & Phrasing
-To maintain a professional, sovereign-grade tone, always use consistent terminology:
--   **NCRC**: National Carbon Registry of Bhutan.
--   **HCE**: Himalaya Carbon Exchange.
--   **ITMO**: Internationally Transferred Mitigation Outcome (Article 6.2 term).
--   **Sovereign Relayer**: The backend service that signs on behalf of the registry.
--   **Harmony Watcher**: The CAD Trust synchronization service.
+### 1. Prisma & Type Casting
+**CRITICAL**: Do NOT bypass Prisma Typescript bindings utilizing `(prisma as any)`. 
+The `schema.prisma` file accurately tracks all relationships (e.g., `UserBalance` arrays cascading against `Profile`). Ensure you frequently run `npx prisma generate` to synchronize your IDE cache.
 
-### 2. TypeScript Formatting
--   Use **Functional Components** with `tsx`.
--   Use `viem` for all blockchain interactions (avoid `ethers` to reduce bundle size).
--   Always use **Absolute Path Aliases** (e.g., `@/components/Navbar` instead of `../../components/Navbar`).
+### 2. Role Assignments
+With the removal of the `SELLER` structure, the primary role enumerations utilized inside the routing guards are:
+-   `GOVERNMENT_ADMIN`: Full access to `/admin/dashboard`. Can simulate issuance and authorize whitelists.
+-   `BUYER`: Institutional user routed to `/buyer/dashboard`.
 
----
+*(Other minor sub-roles like `TRADER` or `AUDITOR` fall through to the Buyer or default flows).*
 
-## 🛠️ CLI Tooling
-
-We have implemented several diagnostic scripts in the `scripts/` directory to speed up development.
-
-### Protocol Diagnostics
-| Command | Result |
-| :--- | :--- |
-| `npx tsx scripts/check-balance.ts` | Displays public address and MATIC/POL balance. |
-| `npx tsx scripts/estimate-gas.ts` | Calculates the current cost of a full deployment. |
-
-### Protocol Maintenance
-| Command | Result |
-| :--- | :--- |
-| `npm run compile` | Compiles Solidity contracts and generates ABIs. |
-| `npm run harmony-watch` | Starts the Harmony CAD Trust bridge. |
+### 3. Action Hooks
+Always locate database mutating tasks inside `src/lib/actions/*` files using `"use server"`.
+- `market.ts`: For standard buying, trading, profile creation, and balance inquiries.
+- `registry.ts`: For Sovereign admin capabilities or project injection.
+- `sovereign.ts`: Designed primarily for high-tier blockchain interactions (e.g. `updateParticipantAuthorization`).
 
 ---
 
-## 🛡️ Production Hardening
+## 🛠️ Developer Interventions (Bypasses)
 
-Before deploying to a mainnet environment, the following hardening steps must be completed:
+Because Supabase authentication flows can be cumbersome to simulate, the system supports a hardcoded override URL parameter logic in local environments.
+- Appending `?bypass=admin` injects a simulated CUID and circumvents the profile fetch to force `GOVERNMENT_ADMIN`.
+- Appending `?bypass=buyer` forces `BUYER` and routes you gracefully.
+*(This logic sits heavily in `getUserProfile()` in `market.ts`).*
 
-1.  **Secret Management**: Move `PRIV_KEY` and `REGISTRY_BRIDGE_AUTH` to a secure manager like **Azure Key Vault** or **AWS Secrets Manager**. Never leave them in the root `.env`.
-2.  **Removal of Mock Fallbacks**:
-    -   In `src/lib/security.ts`, remove the hard-coded development secret.
-    -   In `src/lib/harmony.ts`, remove the simulation of CAD Trust Sync IDs.
-3.  **Governance Layer**: Ensure the `owner` of the `HimalayaCarbonRegistry` is a **Multi-Sig Wallet** (e.g., Safe) controlled by authorized government members, not a single private key.
+---
+
+## 🛡️ Production Hardening Needed
+
+Before pushing the existing prototype to a real, live deployment, YOU MUST:
+1.  **Strip Mocks**: Search the codebase for instances returning `setTimeout` delays or default fallback arrays (e.g. `getTransparencyLogs` in `market.ts` falling back to `mockLogs` if the DB is unpopulated).
+2.  **Strip the Dev Bypass**: The bypass functionality allows dangerous cross-role access explicitly designed to aid prototyping. Removing `process.env.NODE_ENV === "development"` checks from `getUserProfile` and replacing them with hard JWT checks is mandatory.
+3.  **Implement Stripe Webhook Profile Logic**: The current Stripe Webhook in `api/stripe/webhook/route.ts` successfully acknowledges `SUCCEEDED` triggers, but the inner logic updating the user `isAuthorized` flag is currently commented out.
 
 ---
 
 ## ✍️ Documentation Style
-
-Technical documentation should follow these principles:
--   **Actionable**: Use imperative verbs (e.g., "Install the dependency" instead of "The dependency should be installed").
--   **Visual**: Use tables and diagrams where possible to represent complex flows.
--   **Accessible**: Explain acronyms (like ITMO or CDM) on their first use.
-
----
-
-## 📝 Change Log (Docs)
-
-### [1.1.0] - 2026-03-17
--   Added **Harmony Watcher** documentation.
--   Added **Sovereign Sync Engine** documentation.
--   Updated **Setup & Architecture** for Hardhat 3 and `tsx` compatibility.
--   Reorganized `docs/` folder for logical flow.
+When adding files to this `docs` folder, prioritize honesty over aspiration. If a feature executes a `Promise.resolve("fake_id")`, do not document it as an active microservice.

@@ -1,65 +1,59 @@
 # Himalaya Carbon Exchange (HCE) Documentation
 
-Welcome to the technical documentation for the **Himalaya Carbon Exchange (HCE)**, a sovereign-grade carbon market infrastructure built for the Kingdom of Bhutan. 
+Welcome to the technical documentation for the **Himalaya Carbon Exchange (HCE)**, a prototype sovereign carbon market infrastructure designed for the Kingdom of Bhutan.
 
-This repository implements a production-ready prototype that bridges the **National Carbon Registry of Bhutan (NCRC)** with global carbon markets via the **Climate Action Data (CAD) Trust**.
+This repository implements a **two-sided market prototype** bridging the National Carbon Registry (NCRC) with institutional buyers, utilizing a Next.js frontend, Prisma/MySQL database, and Polygon smart contracts.
 
 ---
 
 ## 📑 Table of Contents
-
-1.  **[Introduction](#introduction)**
-2.  **[Core Architecture](./ARCHITECTURE.md)**
-3.  **[Setup & Installation](./SETUP_GUIDE.md)**
-4.  **[Sovereign Sync Engine](./SYNC_ENGINE.md)** - *New: Real-time Registry Sync*
-5.  **[Harmony Watcher](./HARMONY.md)** - *New: Global CAD Trust Bridge*
-6.  **[Smart Contracts](./SMART_CONTRACTS.md)**
-7.  **[API Reference](./API.md)**
-8.  **[Developer Workflow](./DEVELOPER_GUIDE.md)**
-9.  **[Testing & Simulation](./TESTING.md)**
+1. **[Core Architecture](./ARCHITECTURE.md)**
+2. **[Setup & Installation](./SETUP_GUIDE.md)**
+3. **[Running Locally](./RUN_GUIDE.md)**
+4. **[Dashboard Overview](./dashboard_overview.md)**
+5. **[Smart Contracts](./SMART_CONTRACTS.md)**
+6. **[API Reference](./API.md)**
+7. **[Database & Backend Sync](./SYNC_ENGINE.md)**
+8. **[Developer Workflow](./DEVELOPER_GUIDE.md)**
+9. **[Testing Procedures](./TESTING.md)**
+10. **[Harmony Watcher (CAD Trust)](./HARMONY.md)**
 
 ---
 
 ## 1. Introduction
 
-The Himalaya Carbon Exchange is designed to operationalize **Article 6.2 of the Paris Agreement**. It provides the cryptographic "Market Layer" that sits on top of the physical carbon registry, enabling:
+The HCE platform acts as a web portal for **Sovereign Admins (Issuers)** and **Institutional Buyers**, enabling the simulated issuance, acquisition, and retirement of Article 6.2 carbon credits. 
 
--   **High-Integrity Issuance**: On-chain credits (ERC-1155) directly linked to sovereign project approvals.
--   **Article 6.2 Compliance**: Automated tracking of ITMO (Internationally Transferred Mitigation Outcomes) authorizations and Corresponding Adjustments.
--   **Global Synchronicity**: Real-time data mirroring to the CAD Trust to prevent double-counting.
--   **Fractional Liquidity**: Institutional carbon pools (ERC-20) for secondary market trading.
+> **Important Note:** The "Seller" role has been entirely consolidated into the "Government Admin" role, as the sovereign state acts natively as the primary issuer and supplier.
 
 ### Current Implementation Status (March 2026)
 
-| Feature Component | Status | Technology |
+| Feature Component | Status | Reality Check / Implementation Details |
 | :--- | :--- | :--- |
-| **National Registry Sync** | ✅ Operational | Prisma + Supabase + Viem |
-| **Global Harmony Bridge** | ✅ Operational | Viem Event Watcher + CAD Trust v2 API |
-| **Sovereign Minting Bridge** | ✅ Operational | HMAC-Signed Webhooks |
-| **Marketplace & RFQ** | ✅ Functional | Next.js App Router |
-| **Retirement Verification** | ✅ Operational | On-chain Log Inspection |
-| **Auth & Security** | ⚠️ Prototype | HMAC / NDI-Hardening Planned |
+| **Prisma DB Architecture** | ✅ Operational | Fully relational MySQL structure with cascading limits and explicit type-mapping. |
+| **NCRC Registry Lock** | ✅ Operational | `api/registry/lock` endpoint validates HMAC signatures and mints via Viem relayer. |
+| **Sovereign Admin Panel** | ✅ Operational | Securely hosted at `/admin/dashboard`, merging registry oversight and simulators. |
+| **Buyer Marketplace** | ✅ Operational | Users query `RegistryProject` via Prisma and acquire via `initiateAcquisition`. |
+| **Retirement Flow** | ⚠️ Partial Prototype | Writes to off-chain DB effectively (`Certificate` table), mapping to a mocked on-chain verification hash. |
+| **CAD Trust Harmony** | ⛔ Mock / Demo | Currently uses `setTimeout` delays and generates fake strings (`BT-XXXX`). Not connected to external nodes. |
+| **OAuth / Session Management** | ⚠️ Partial Prototype | Bypassed easily for dev (`?bypass=admin`). Supabase logic exists but is often sidestepped for rapid demonstration testing. |
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frameworks & UI
--   **Next.js 15.1.6** (App Router)
--   **Tailwind CSS v4** (Modern Utility-First Styles)
--   **Framer Motion** (Micro-animations & Transitions)
--   **Lucide React** (Consistent Iconography)
+### Frontend & Routing
+- **Next.js 15.1** (App Router)
+- **Tailwind CSS v4** & **Framer Motion** (UI)
 
-### Blockchain & Web3
--   **Hardhat 3**: Smart contract development and local node.
--   **Viem & Wagmi**: High-performance blockchain interaction layer.
--   **RainbowKit**: Premium wallet connectivity experience.
--   **Solidity 0.8.26**: Using the Cancun EVM for high-integrity execution.
+### Database & Security
+- **Prisma ORM** (MySQL mapping engine)
+- **Supabase** (Auth provider mapping strictly linked to off-chain Profiles).
+- **HMAC-SHA256 Profiles** (Sovereign webhook verification).
 
-### Data & Backend
--   **Prisma ORM**: Type-safe database access.
--   **Supabase**: Cloud-native PostgreSQL for sovereign metadata storage.
--   **tsx**: Next-generation TypeScript execution engine for service watchers.
+### Blockchain
+- **Viem** (Relayer client for Node executing Smart Contracts).
+- **Solidity** (Core EVM contract logic in `/contracts`).
 
 ---
 
@@ -69,28 +63,15 @@ The Himalaya Carbon Exchange is designed to operationalize **Article 6.2 of the 
 .
 ├── contracts/          # Solidity Smart Contracts
 ├── docs/               # Technical Documentation (You are here)
-├── prisma/             # Database Schema & Migrations
+├── prisma/             # Schema & Relationships generated into .prisma/client
 ├── public/             # Static Assets & Images
-├── scripts/            # Deployment & Maintenance Scripts
-│   ├── harmony-watcher.ts  # Real-time CAD Trust Sync Service
-│   └── deploy.ts           # Protocol Deployment Pipeline
-└── src/
-    ├── app/            # Next.js Pages & API Routes
-    ├── components/     # UI Component Library
-    ├── lib/            # Core Logic (Blockchain, Sync, Harmony)
-    └── constants/      # Protocol Addresses & ABIs
+├── src/
+│   ├── app/            # Next.js Pages (Admin, Buyer, API Routes)
+│   ├── components/     # UI Component Library
+│   └── lib/            # Server Actions (market.ts, registry.ts, sync.ts)
 ```
 
 ---
 
-## 📋 Documentation Metadata
-
--   **Version**: 1.1.0-PROTOTYPE
--   **Last Updated**: 2026-03-17
--   **Author**: HCE Engineering Team (Bhutan Platform)
--   **Contact**: admin@himalayacarbon.bt
-
----
-
-> [!IMPORTANT]
-> This documentation covers the current codebase state. Some values (like `CAD_TRUST_AUTH_TOKEN`) are placeholders for simulation purposes. For a live deployment, refer to the [Production Hardening Guide](./DEVELOPER_GUIDE.md#production-hardening).
+> [!WARNING]
+> This repository contains aggressively mocked integration stubs (e.g. `syncCADTrust` in `registry.ts`). Do not deploy this to production without isolating and establishing real networking for the mocked endpoints.

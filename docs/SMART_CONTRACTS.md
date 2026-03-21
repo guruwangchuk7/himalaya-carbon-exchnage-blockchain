@@ -1,50 +1,41 @@
-# Smart Contract Protocol
+# Smart Contract Infrastructure
 
-The HCE Protocol is built on a modular suite of Solidity contracts, leveraging OpenZeppelin's tried-and-tested libraries.
+The **HimalayaCarbonRegistry** operates as the sole EVM executor on the Polygon network managing the State's sovereign carbon assets.
 
----
+## 🔗 The Relayer Connection (`src/lib/blockchain.ts`)
+The platform explicitly leverages `viem` to bypass traditional RPC layers, establishing a heavily permissioned local instance executing Smart Contracts natively.
 
-## 📜 HimalayaCarbonRegistry.sol
+### Configuration Parameters
+```typescript
+export const publicClient = createPublicClient({
+  chain: // Targets the mapped chain (Mainnet/Amoy/Local)
+  transport: http(process.env.NEXT_PUBLIC_RPC_URL)
+});
 
-The core of the Bhutanese Carbon Market. It manages the issuance, metadata, and retirement of credits.
+export const walletClient = createWalletClient({
+  account: privateKeyToAccount(`0x${process.env.PRIVATE_KEY}`),
+  chain: // Mapping
+});
+```
 
-### 💎 Token Standard: ERC-1155
-We use ERC-1155 because it allows us to manage thousands of different **Project Vintages** within a single contract. Each `TokenID` represents a unique project/vintage pair.
-
-### 🛡️ Access Control & Security
--   **Owner-Only Minting**: Only the authorized Sovereign Relayer (the contract owner) can issue new credits.
--   **Participant Whitelist**: The `setParticipantAuthorization` function restricts who can hold and trade credits.
--   **Transfer Interdiction**: Non-whitelisted addresses cannot receive tokens, preventing the illicit trade of sovereign assets.
-
-### 🧩 Key Functions
--   `mintCarbonCredit(...)`: Issues new credits and locks their metadata on-chain.
--   `retire(...)`: Burns the credits and emits a `CarbonRetired` event for global synchronization.
--   `setArticle6Status(...)`: Updates the international authorization status of a specific vintage.
--   `setCorrespondingAdjustment(...)`: Records proof that the bilateral settlement has occurred.
+Because `walletClient` initializes utilizing `process.env.PRIVATE_KEY`, the application itself serves as a **highly-permissioned cryptographic bridge**.
 
 ---
 
-## 💧 CarbonPool.sol
+## 📜 Executed Functions
+The Node.js server acts as an authorized relayer triggering writes onto the blockchain specifically when validated NCRC commands execute.
 
-A liquidity wrapper that converts specific ERC-1155 vintages into divisible ERC-20 tokens.
--   **Fungibility**: Allows credits from different projects with similar methodologies to be traded as a single "Pool Token" (e.g., *BHU-NATURE-POOL*).
--   **DEX Ready**: These tokens can be placed into Uniswap V3 or other decentralized exchanges to provide 24/7 liquidity.
+### `mintFromRegistry` 
+- Executed exclusively via `/api/registry/lock` when a valid HMAC signature clears.
+- Constructs strongly typed metadata structs holding values specifically matching Article 6.2 demands (e.g. `isArticle6Authorized`, `vintageYear`, `correspondingAdjustmentFinalized`).
+- Simulates the execution context prior to writing natively via `walletClient.writeContract()`.
+
+### `setParticipantAuthorization` 
+- Executed directly out of the `updateParticipantAuthorization` server action inside `/admin/dashboard`.
+- Restricts transfers entirely, demanding execution from the active Deployer Key instance.
 
 ---
 
-## 🏭 CarbonPoolFactory.sol
-
-A factory pattern designed for the Ministry to deploy new thematic pools (e.g., Renewable Energy, Afforestation) without manual contract coding.
-
----
-
-## 📊 Event Schema (The "Source of Truth")
-
-The frontend and the **Harmony Watcher** rely on these high-integrity events:
-
-| Event Name | Purpose |
-| :--- | :--- |
-| `CarbonMinted` | Triggers the creation of the local database record. |
-| `CarbonRetired` | Triggers the CAD Trust synchronization sequence. |
-| `Article6StatusUpdated` | Updates international trade eligibility markers. |
-| `ParticipantAuthorized` | Updates the institutional whitelist. |
+## ⚠️ Known Limitations
+The platform currently treats the Smart Contract predominantly as a one-way Write-Ledger. 
+While functions like `syncProjectsToDb` pull specific structural states backward into Prisma, most immediate Application state logic ignores active gas polling or event-log tracing dynamically, opting instead to write simultaneously to Prisma and Viem simultaneously inside unified Server Actions.

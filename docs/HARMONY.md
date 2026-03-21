@@ -1,70 +1,40 @@
-# Harmony Watcher: Global CAD Trust Bridge
+# Harmony Watcher (CAD Trust Bridge)
 
-The **Harmony Watcher** is a specialized service that provides the real-time link between Bhutan's National Registry and the **Global Climate Action Data Trust**.
-
----
-
-## 🛰️ Overview
-
-The watcher runs as a standalone Node.js process using the `tsx` engine. Its primary responsibility is to ensure that every **Retirement** event in Bhutan is immediately visible to the global carbon market.
-
-**Location**: `scripts/harmony-watcher.ts`  
-**Core Logic**: `src/lib/harmony.ts`
+The **Harmony Watcher** is conceptualized as an off-chain daemon required to fulfill Article 6.2 transparency obligations under the Paris Agreement by syndicating data back to the global **Climate Action Data (CAD) Trust**.
 
 ---
 
-## 🔄 The Synchronization Lifecycle
+## 🛑 Current Implementation Status: MOCKED
 
-1.  **Event Detection**: The watcher uses a persistent WebSocket/HTTP connection to listen for the `CarbonRetired(address holder, uint256 id, uint256 amount, string beneficiary, string purpose)` event.
-2.  **Metadata Enrichment**: Upon detection, it queries the smart contract for the underlying project metadata (Vintage, Methodology, Project ID).
-3.  **Governance Mapping**: The local data is mapped to the **CAD Trust Meta-Data Standard v2.0**.
-4.  **CAD Trust Push**: The service makes a `POST` request to the Harmony API with a Bearer Token (`CAD_TRUST_AUTH_TOKEN`).
-5.  **Circular Reference**:
-    -   The **CAD Sync ID** is returned by the global trust.
-    -   This ID is logged in the local sovereign audit trail, creating a verifiable link between the `txHash` and the `SyncID`.
+Historically, HCE documentation may have described this feature as "Operational." **This is incorrect.**
 
----
+The real-time synchronization between the local Himalaya Carbon Exchange node and the global multilateral CAD Trust is currently **not fully implemented**. It relies heavily on mock simulation functions for demonstration purposes.
 
-## 🛠️ Configuration
-
-| Variable | Description | Default / Example |
-| :--- | :--- | :--- |
-| `NEXT_PUBLIC_CAD_TRUST_API_URL` | The Harmony API endpoint. | `https://api.harmony.cadtrust.org/v2` |
-| `CAD_TRUST_AUTH_TOKEN` | Institutional credential. | Secure Bearer Token |
-
-### Simulation Mode
-If the `CAD_TRUST_AUTH_TOKEN` is set to the default placeholder (`your-institutional-token-here`), the watcher will:
--   Validates the on-chain event.
--   Generate a **Sovereign-Authentic Sync ID** (e.g., `CAD-BT-XXXXXXXX`).
--   Simulate the network latency of a real global sync.
-
----
-
-## 🚀 Running the Watcher
-
-In a production or high-stakes demo environment, run:
-
-```bash
-npm run harmony-watch
+### Where is it mocked?
+Inside `src/lib/actions/registry.ts`:
+```typescript
+export async function syncCADTrust(projectId: string) {
+  // Mock CAD Trust sync
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  
+  HimalayaSecurity.logAuditAction("CAD_TRUST_SYNC", { projectId });
+  
+  return { 
+    success: true, 
+    gin: `BT-${Math.floor(Math.random() * 9000)}-${['X', 'Y', 'Z'][Math.floor(Math.random() * 3)]}`
+  };
+}
 ```
+If you encounter UI components indicating successful "Harmonized" states or CAD Trust GIN generations, they are currently deriving success from this 1.5-second timeout and randomized string generator, NOT from an active RPC listener or external REST payload.
 
-**Expected Console Output:**
-```text
-----------------------------------------------------------------
-    Himalaya Carbon Exchange - Sovereign Harmony Watcher        
-----------------------------------------------------------------
-Status: Initializing...
-Target Registry: 0x5Fb...
-CAD Trust API:   https://api.harmony.cadtrust.org/v2
-----------------------------------------------------------------
-Harmony Watcher: Starting real-time event monitoring...
-Status: RUNNING
-Monitoring 'CarbonRetired' events. Press Ctrl+C to stop.
-```
+### Legacy Watcher Scripts
+Any existing script in `scripts/harmony-watcher.ts` intended to actively listen to EVM `CarbonRetired` events has not been integrated into the production Next.js runtime build.
 
----
+## 🏗️ Future Implementation Requirements
 
-## 🛡️ Resilience & Error Handling
-
--   **Fallback IDs**: If the CAD Trust API is unreachable, the system generates a `CAD-FALLBACK-BT-...` ID to ensure local accounting is never blocked.
--   **Retry Logic**: The service is designed to be restart-safe. In future releases, it will support block-range scanning to catch events missed during downtime.
+To bring this feature to a production-ready state, a developer must:
+1. Initialize an active WebSocket (`wss://`) connection to the Polygon network utilizing `viem`.
+2. Map the `CarbonRetired` event signature precisely to the deployed `HimalayaCarbonRegistry`.
+3. Construct a valid JSON-LD metadata payload matching the CAD Trust Data Dictionary v2.
+4. Issue an authenticated `POST` request to the national CAD Trust instance API gateway.
+5. Store the returned specific Global Identification Number (GIN) mapping onto the Prisma `Certificate` database model.

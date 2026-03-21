@@ -1,92 +1,50 @@
-# Protocol Maintenance & Testing Guide
+# Testing Procedures
 
-This guide describes the procedures for validating and maintaining the **Himalaya Carbon Exchange (HCE)** protocol.
-
----
-
-## 🏗️ 1. Health Diagnostics (CLI)
-
-Before performing any UI-based tests, ensure the protocol infrastructure is healthy using our built-in CLI tools.
-
-### 1.1: Environment Check
-```bash
-# Verify the .env is correctly pointing to the target network
-npx tsx scripts/check-balance.ts
-```
-**Expected Output**: Displays the correct deployer address and a positive MATIC/POL balance.
-
-### 1.2: System Compilation
-```bash
-# Ensure all contracts and ABIs are synchronized
-npm run compile
-```
+This guide provides an honest set of procedures for evaluating the active logic paths in the Himalaya Carbon Exchange. 
 
 ---
 
-## 🌐 2. Frontend & Interaction Testing
+## 🛠️ 1. Environment Simulation Setup
 
-### 2.1: Local Host Configuration
-1.  Start the local node: `npx hardhat node`
-2.  Deploy the registry: `npx hardhat run scripts/deploy.ts --network localhost`
-3.  Ensure `.env` has:
-    - `NEXT_PUBLIC_RPC_URL=http://127.0.0.1:8545`
-    - `NEXT_PUBLIC_CHAIN_ID=31337`
+Because strict Supabase Authentication is currently augmented, testing the platform revolves heavily around the local **Developer Override** logic.
 
-### 2.2: Marketplace Verification
-1.  Navigate to `http://localhost:3000/marketplace`.
-2.  **Search**: Type "Hydro" to verify real-time project filtering.
-3.  **RFQ**: Click "Institutional RFQ" and submit a request. Verify the "Success" toast notification.
+### Modifying User State (Bypasses)
+1. Boot the server via `npm run dev`.
+2. Navigate to `http://localhost:3000/login`.
+3. The server natively listens for the mock credential combo:
+   - **Email:** `guruwangchuk1234` (any domain)
+   - **Password:** `123456`
+4. If accessed via the standard portal, this instantly vectors you into the `BUYER` role and routes to `/buyer/dashboard`.
+5. If accessed specifically through the Sovereign portal, you are verified as `GOVERNMENT_ADMIN` and dumped natively into `/admin/dashboard`.
 
-### 2.3: Wallet Connectivity (RainbowKit)
-1.  Click **Connect Wallet**.
-2.  Select Metamask and switch to the Localhost work network.
-3.  **Verification**: The Navbar should display the abbreviated wallet address.
+*(Alternatively, you can manually force access by simply appending `?bypass=admin` or `?bypass=buyer` directly to the `/dashboard` URL).*
 
 ---
 
-## 🧪 3. Sovereign Lifecycle Testing
+## 🌐 2. Lifecycle Audits
 
-This is the most critical test flow for the BSL 2026 demo.
+### 2.1 Initiating an Acquisition (`BUYER`)
+1. With `?bypass=buyer` active, navigate to `/marketplace`.
+2. Attempt to acquire carbon assets natively from a listed project.
+3. This triggers `initiateAcquisition()` in `market.ts`.
+4. Check Prisma Studio (`npx prisma studio`) or your MySQL client:
+   - A `UserBalance` block should exist actively storing your generated CUID and joining directly to the `RegistryProject.projectId` and your `Profile.userId`.
+   - Your `.amount` should decrement heavily against the global project limit.
+   - An `AuditLog` row should visibly exist showing "ASSET_ACQUISITION".
 
-### 3.1: The Registry Mint (Simulator)
-1.  Navigate to `/simulator`.
-2.  Click **"Lock in NCRC & Trigger Bridge"**.
-3.  **Verification**: 
-    -   The simulator console should show a successful HMAC signature validation.
-    -   A transaction hash should appear, confirming the minting on the local blockchain.
+### 2.2 Re-Issuing the Balance (`ADMIN`)
+1. Flip your simulation override to `?bypass=admin` and navigate to `/admin/dashboard`.
+2. The Simulator component should natively evaluate the active values inside the `RegistryProject` module.
+3. Observe how UI elements like "Sovereign Project Simulator" currently mock functionality without directly tying a UI form to an actual database `$transaction`. *(Uploading projects is unhooked).*
+4. Navigate to the CAD Sync module. Click "Sync Global State". Note that it completes artificially fast due to the mocked `setTimeout` bypass.
 
-### 3.2: The Harmony Retirement (Cross-Process Test)
-1.  Open a second terminal and start the watcher: `npm run harmony-watch`.
-2.  In the browser, navigate to `/retire`.
-3.  Select a carbon vintage and click **"Retire Units"**.
-4.  **Verification**:
-    -   **UI**: Should show "Retirement Confirmed" and display a downloadable certificate.
-    -   **Watcher Terminal**: Should immediately print: `Detected CarbonRetired event... Harmony Watcher: SUCCESS. Linked to CAD Trust Harmony Node.`
-
----
-
-## 🛡️ 4. API & Security Audits
-
-### 4.1: Bridge Security
-Attempt to post a mock minting request to `/api/registry/lock` without a valid `X-Registry-Signature`.
--   **Expected Result**: `401 Unauthorized`.
-
-### 4.2: Audit Logs
-Check the terminal running the Next.js server (`npm run dev`) after a retirement.
--   **Expected Result**: Search for `[AUDIT]` tags in the console output to verify log persistence.
+### 2.3 Retiring a Balance (`BUYER`)
+1. Return to `?bypass=buyer` and navigate to `/retire`.
+2. Retiring a fraction of your `UserBalance` deducts natively using `prisma.$transaction`.
+3. The platform generates an immutable `Certificate` hash logically bound to the database.
 
 ---
 
-## 🔧 5. Maintenance Commands
-
-| Task | Command |
-| :--- | :--- |
-| **Refresh Database** | `npx prisma db push` |
-| **Regenerate Client** | `npx prisma generate` |
-| **Clean Contracts** | `npx hardhat clean` |
-| **Watch CAD Trust** | `npm run harmony-watch` |
-
----
-
-**Last Review**: 2026-03-17  
-**Status**: Manual Testing Protocol Operational  
+## 🚨 3. Broken Scenarios to Avoid
+- **Stripe Subscriptions**: Attempting to pay via the mocked checkout flow will reach success in the Stripe dashboard and hit the `route.ts` webhook safely. However, because the profile updater block is commented out, your `isAuthorized` flag will remain false, rendering manual payment testing ineffective.
+- **RFQs**: `api/market/rfq` executes purely functionally but natively ignores mapping your active Session to the `buyerId`, writing raw strings to `buyerName` instead. Testing RFQs in heavily related queries will fail.

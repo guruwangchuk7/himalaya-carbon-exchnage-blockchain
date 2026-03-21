@@ -1,61 +1,25 @@
-# Sovereign Sync Engine
+# Database & Sync Engine
 
-The **Sovereign Sync Engine** is the internal bridge that ensures the HCE Web Application remains perfectly aligned with the On-Chain Registry state.
+The central persistence layer of the Himalaya Carbon Exchange lies explicitly within the MySQL environment mapped by the Prisma ORM. 
 
----
+## 🏗️ The Schema (`prisma/schema.prisma`)
+The system explicitly mandates structural relational integrity to ensure the carbon tracking engine cannot mathematically deviate or lose sync.
 
-## 🔍 Overview
-
-While the blockchain is the **Source of Truth**, direct blockchain queries are often slow for sophisticated UI features like searching, filtering, and dashboard analytics. The Sync Engine solves this by mirroring on-chain state into a high-performance **Supabase (PostgreSQL)** database.
-
-**Location**: `src/lib/sync.ts`  
-**Database**: Prisma ORM
-
----
-
-## 🛠️ How it Works
-
-### 1. Data Ingestion
-The engine uses `publicClient.readContract` to fetch the complete list of project IDs and their associated metadata from the `HimalayaCarbonRegistry`.
-
-### 2. Status Mapping
-It translates Solidity data types into user-friendly database enums.
--   **Solidity 0/1/2/3** (Pending/Authorized/Issued/Retired)
--   **Mapped to**: `DRAFT` / `APPROVED` / `ISSUED_ON_CHAIN`
-
-### 3. Upsert Logic
-The engine performs an **Upsert** (Update or Insert) using Prisma. If a project already exists in the database, its metadata (Total Volume, Article 6 Status, etc.) is updated to match the change on the blockchain.
+### Cascading Rules
+- `Profile`: Holds `Role` definitions (`GOVERNMENT_ADMIN`, `BUYER`). Tied directly to a Supabase User ID.
+- `RegistryProject`: Stores global details including `totalVolume`, `vintageYear`, and `isArticle6`.
+- `UserBalance`: A strict mapping table that acts as the "Wallet". Every balance is intrinsically tethered to a specific `Profile` and a specific `RegistryProject` utilizing `.include{}` join compatibility. Deleting a user safely cascades their balance destruction.
 
 ---
 
-## 🏗️ Use Cases
+## 🔄 The Sync Environment (`src/lib/sync.ts`)
 
-### Performance-First Marketplace
-The `MarketplacePage` queries the database via `prisma.registryProject.findMany()`. This allows for sub-100ms load times and advanced filtering by methodology or vintage year, which would be impossible with raw blockchain calls.
+Historically conceptualized as a daemon monitoring process, the **Sovereign Sync Engine** (`syncProjectsToDb`) currently executes on-demand capabilities to ingest public blockchain metrics aggressively into the local Prisma metadata layer.
 
-### Institutional Dashboards
-The **Registry Dashboard** uses the synced data to calculate global metrics like "Total Issuance" and "Article 6 Authorization Ratios" instantly.
+### How it Works:
+1. Calls the `HimalayaCarbonRegistry` Smart Contract function `getProjectIds()`.
+2. Iterates across numerical IDs utilizing `getProject(ID)` fetching pure `BigInt` arrays.
+3. Rapidly decodes internal enumerations (e.g. tracking State Level 2 -> `ISSUED_ON_CHAIN`).
+4. Rebuilds the fast-search index utilizing `prisma.registryProject.upsert`, ensuring no duplicate overrides occur.
 
----
-
-## 🧹 Manual Synchronization
-
-You can trigger a manual full-system sync from the **Registry-Market Synchronization** panel in the administrative dashboard, or by calling the `syncProjectsToDb()` function in the server environment.
-
----
-
-## 📑 Database Schema (Registry Segment)
-
-```prisma
-model RegistryProject {
-  id          String   @id @default(uuid())
-  projectId   String   @unique // On-chain Serial
-  projectName String
-  methodology String
-  vintageYear Int
-  totalVolume Decimal
-  status      String   @default("ISSUED_ON_CHAIN")
-  isArticle6  Boolean  @default(false)
-  updatedAt   DateTime @updatedAt
-}
-```
+**Current Limitations**: This process is effectively a one-way mirror. Operations taking place initially **inside** the HCE (like trading or manual retirement) depend on internal API endpoints writing instantly back to Prisma, rather than strictly waiting for eventual-consistency derived from the Ethereum Virtual Machine events.

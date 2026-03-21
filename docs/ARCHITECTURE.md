@@ -1,74 +1,51 @@
 # System Architecture
 
-The Himalaya Carbon Exchange (HCE) follows a **Sovereign Transparency Architecture**. This design ensures that while carbon credits are traded on a decentralized public blockchain (Polygon), the **Sovereign Control** remains with the National Carbon Registry of Bhutan (NCRC).
+The Himalaya Carbon Exchange (HCE) follows a **Two-Factor Sovereign Market** architecture, bifurcated cleanly between **Government Admins** (Issuers) and **Institutional Buyers** (Acquirers).
 
 ---
 
 ## 🏗️ Technical Blueprint
 
-### 1. Hybrid Market Layer
-HCE does not implement a registry from scratch. Instead, it serves as a **Protocol Mirror**.
--   **NCRC (Off-Chain)**: The authoritative database of carbon projects and serial numbers.
--   **HCE (On-Chain)**: A cryptographic representation of NCRC units as ERC-1155 tokens.
--   **Synchronization**: Handled via HMAC-signed webhooks and the **Sovereign Sync Engine**.
+### 1. The Request Lifecycle Layer (Next.js App Router)
+The platform utilizes React Server Components heavily.
+- **Routing**: A centralized redirector at `src/app/dashboard/page.tsx` evaluates user roles and instantly forces traffic into either `/admin/dashboard` or `/buyer/dashboard`.
+- **Database Intercession**: `src/lib/actions/market.ts` acts as the primary ORM service layer, ensuring database profile synchronization and referential integrity against the Prisma engine.
 
-### 2. The Multi-Chain Ledger
--   **Polygon Amoy/Mainnet**: Used for project issuance, decentralized trading, and retirement.
--   **Sovereign Relayer**: A secure execution environment in `src/lib/blockchain.ts` that acts as the only entity authorized to "Bridge" credits from the physical registry to the blockchain.
+### 2. The Persistence Layer (MySQL / Prisma)
+The schema rigidly enforces relations to prevent state fragmentation:
+- **`Profile`**: Driven by Supabase ID, acts as the root object for `UserBalance` and `RFQ`.
+- **`RegistryProject`**: The physical representation of a carbon deployment.
+- **`UserBalance`**: Ties an exact amount of carbon assets (`amount`) directly to a `Profile` and a `RegistryProject`.
+- **`Certificate`**: Immutable event streams of retirements.
 
----
-
-## 🧩 Core Modules
-
-### 🛰️ The Harmony Watcher (`scripts/harmony-watcher.ts`)
-The "Heartbeat" of the global integration. It listens for `CarbonRetired` events on the blockchain and automatically pushes a structured Article 6.2 payload to the **CAD Trust Metadata Layer**.
-
-### 🔄 The Sync Engine (`src/lib/sync.ts`)
-Periodically pulls project metadata from the NCRC smart contract and upserts it into the **Supabase (Prisma)** database. This enables:
--   Instant search and filtering in the Marketplace.
--   High-performance analytics on the Dashboard.
--   Redundancy between on-chain state and off-chain metadata.
-
-### 🛡️ Sovereign Bridge Security (`src/lib/security.ts`)
-Implements HMAC-SHA256 signature verification. All minting requests from the NCRC must be signed with a shared-secret (or NDI-derived key in production) before the HCE Relayer will process them.
-
----
-
-## 📦 Data Models
-
-### On-Chain: `HimalayaCarbonRegistry.sol`
-Stores the "Minimum Viable Metadata" for Article 6.2 compliance:
--   `vintageYear`: Tracking the year of sequestration.
--   `isArticle6Authorized`: Boolean flag for ITMO eligibility.
--   `correspondingAdjustment`: Status of bilateral settlement.
--   `methodology`: The carbon accounting standard used.
-
-### Off-Chain: `schema.prisma`
-Enriches the on-chain data with user-friendly information:
--   Full project descriptions and images.
--   Co-benefit tags (SDGs).
--   RFQ (Request for Quote) history.
--   Sovereign audit trails.
+### 3. The Blockchain Execution Layer (Viem / Polygon)
+- The server initializes a private `walletClient` inside `src/lib/blockchain.ts` utilizing the `PRIVATE_KEY`.
+- This relayer acts as a highly permissioned agent. It receives validated off-chain triggers directly from NCRC and pushes them onto the public ledger.
 
 ---
 
 ## 📈 Request Flows
 
-### A. The "Lock-and-Mint" Flow
-1.  NCRC signals a credit lock via a `POST /api/registry/lock` webhook.
-2.  HCE verifies the HMAC signature.
-3.  The **Relayer** mints the corresponding ERC-1155 tokens to the project developer's wallet.
-4.  The action is logged in the **Sovereign Audit Trail**.
+### A. The "Lock-and-Mint" Sovereign Flow (Implemented)
+1.  External actor pushes to `POST /api/registry/lock`.
+2.  `HimalayaSecurity.verifyRegistrySignature()` checks the HMAC-SHA256 signature using a shared secret.
+3.  The request passes through strict `Zod` metadata validation.
+4.  The server executes `mintFromRegistry` via Viem, pushing an EVM state change.
+5.  A simultaneous Prisma `upsert` logs the off-chain proxy into `RegistryProject`, making it visible to web users instantly.
 
-### B. The "Retire-and-Sync" Flow
-1.  A user calls `retire()` on the smart contract.
-2.  The **Harmony Watcher** detects the event.
-3.  The Watcher calls the **CAD Trust API** to record the global retirement.
-4.  The system generates a uniquely hash-linked **Retirement Certificate**.
+### B. Institutional Acquisition Flow (Implemented)
+1.  A buyer natively fires `initiateAcquisition()` server action.
+2.  Prisma utilizes `$transaction` to atomically:
+    - Decrement `totalVolume` from the `RegistryProject`.
+    - Construct an `RFQ` receipt labeled `MATCHED`.
+    - Append securely onto the `UserBalance` array.
+    - Emit an off-chain `AuditLog` string.
+
+### C. Harmony CAD Trust Integration (MOCKED)
+1. The architecture historically defined a complex cross-chain watcher.
+2. **Current Reality**: This is heavily mocked. `syncCADTrust()` in `registry.ts` artificially simulates a 1500ms delay and mathematically derives a fake string (`BT-3422-X`) instead of actively communicating with an Oracle or node network.
 
 ---
 
-## ⚖️ Governance & Compliance
-
--   **Transfer Whitelisting**: The registry contract restricts credit transfers to `AuthorizedParticipants`. This ensures that carbon credits only move through institutional entities that have completed national KYB (Know Your Business).
--   **Article 6.2 ITMOs**: The platform provides native fields for `ItmoAuthorizationID`, ensuring that every bilateral trade between Bhutan and another country is verifiable at the protocol level.
+## 🚫 Deprecated Architectures
+The **Seller Dashboard** and its adjacent routing logic have been entirely removed. The sovereign government operates as the primary origin point for Article 6 credits.
