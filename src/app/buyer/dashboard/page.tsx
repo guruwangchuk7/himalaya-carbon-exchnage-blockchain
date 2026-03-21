@@ -8,6 +8,7 @@ import { getUserBalances, getUserProfile } from "@/lib/actions/market";
 import { StatCard, PortfolioItem } from "@/components/dashboard/DashboardWidgets";
 import { useRouter } from "next/navigation";
 import { RFQStatusPanel } from "@/components/RFQStatusPanel";
+import { Team } from "@/components/Team";
 
 export default function BuyerDashboardPage() {
   const router = useRouter();
@@ -135,6 +136,7 @@ export default function BuyerDashboardPage() {
 
         </div>
       </div>
+      <Team />
     </main>
   );
 }

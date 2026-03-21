@@ -6,6 +6,7 @@ import { BentoGrid } from "@/components/BentoGrid";
 import { Pricing } from "@/components/Pricing";
 import { Footer } from "@/components/Footer";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { Team } from "@/components/Team";
 
 export default function Home() {
   return (
@@ -88,6 +89,8 @@ export default function Home() {
 
       <BentoGrid />
 
+      <Team />
+      
       <Pricing />
       
       <Footer />

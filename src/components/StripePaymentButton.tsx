@@ -67,15 +67,17 @@ export const StripePaymentButton = ({ amount, planName, userId, userEmail }: Str
       onClick={handleCheckout}
       disabled={loading}
       variant={planName === "Institutional Traders" ? "primary" : "secondary"}
-      className="mt-6 w-full flex items-center justify-center gap-2 border border-border-subtle"
+      className="mt-6 w-full min-h-[76px] flex flex-col items-center justify-center gap-1 border border-border-subtle p-3 text-center leading-snug"
     >
       {loading ? (
         <>
           <Loader2 className="h-4 w-4 animate-spin" />
-          Processing...
+          <span>Processing...</span>
         </>
       ) : (
-        `Access ${planName} Portals`
+        <span>
+          Access {planName} <br /> Portals
+        </span>
       )}
     </Button>
   );

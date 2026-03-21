@@ -166,10 +166,12 @@ function AccessCard({ plan, stage, index }: { plan: Plan; stage: AccessStage; in
         ))}
       </ul>
 
-      <StripePaymentButton
-        amount={plan.amount}
-        planName={plan.name}
-      />
+      <div className="mt-auto pt-2">
+        <StripePaymentButton
+          amount={plan.amount}
+          planName={plan.name}
+        />
+      </div>
     </motion.article>
   );
 }
