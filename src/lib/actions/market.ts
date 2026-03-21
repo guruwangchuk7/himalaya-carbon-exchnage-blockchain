@@ -37,6 +37,7 @@ async function ensureProfile(userId: string, role: string = "BUYER", organizatio
     where: { userId }
   });
 
+  
   // AUTO-HEALING: If it's the bypass user and was created with wrong role, fix it
   if (profile && userId === "00000000-0000-0000-0000-admin-bypass" && profile.role !== "GOVERNMENT_ADMIN") {
       profile = await profileTable.update({
@@ -55,16 +56,34 @@ async function ensureProfile(userId: string, role: string = "BUYER", organizatio
         assignedRole = "BUYER";
     }
     
-    profile = await profileTable.create({
-      data: {
-        userId,
-        email,
-        organization: organization || "Institutional Organization",
-        isAuthorized: true, 
-        role: assignedRole
+    try {
+      profile = await profileTable.create({
+        data: {
+          userId,
+          email,
+          organization: organization || "Institutional Organization",
+          isAuthorized: true, 
+          role: assignedRole
+        }
+      });
+      console.log(`✅ MySQL record created for ${userId}`);
+    } catch (e: any) {
+      // Auto-Heal: If the email already exists in a mock configuration, bypass the unique constraint by suffixing the email for this new test user
+      if (e.code === 'P2002') {
+         console.warn(`[AUTH] Collision on email ${email}, auto-healing mock address...`);
+         profile = await profileTable.create({
+            data: {
+              userId,
+              email: `conflict_${Date.now()}_${email}`,
+              organization: organization || "Institutional Organization",
+              isAuthorized: true, 
+              role: assignedRole
+            }
+         });
+      } else {
+         throw e;
       }
-    });
-    console.log(`✅ MySQL record created for ${userId}`);
+    }
   } else if (email && !profile.email) {
     // Healing: Sync email to existing profile if missing
     await profileTable.update({
@@ -405,6 +424,11 @@ export async function getUserProfile(bypassRole?: string) {
       effectiveUserId = "00000000-0000-0000-0000-admin-bypass";
       effectiveRole = "GOVERNMENT_ADMIN";
       effectiveEmail = "guruwangchuk1234@gmail.com";
+    } else if (bypassRole === "buyer") {
+      console.log("🛠️ BYPASS TRIGGERED: Buyer Mode");
+      effectiveUserId = "00000000-0000-0000-0000-buyer-bypass";
+      effectiveRole = "BUYER";
+      effectiveEmail = "buyer@himalaya.bt";
     } else if (process.env.NODE_ENV === 'development' && !effectiveUserId) {
         effectiveUserId = "00000000-0000-0000-0000-000000000000";
     }

@@ -19,12 +19,17 @@ const NavLink = ({ href, children }: { href: string; children: React.ReactNode }
 
 export const Navbar = () => {
   const [role, setRole] = useState<string | null>(null);
+  const [bypassParam, setBypassParam] = useState("");
 
   useEffect(() => {
     async function fetchRole() {
       // Handle bypass param for local testing
       const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-      const bypass = params?.get("bypass") || undefined;
+      const bypass = params?.get("bypass");
+      
+      if (bypass) {
+         setBypassParam(`?bypass=${bypass}`);
+      }
       
       const res = await getUserProfile(bypass as any);
       if (res.success && res.data) {
@@ -42,7 +47,7 @@ export const Navbar = () => {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="glass flex w-full max-w-7xl items-center justify-between rounded-full px-6 py-3 shadow-soft-float"
       >
-        <Link href="/" className="flex items-center gap-2">
+        <Link href={`/${bypassParam}`} className="flex items-center gap-2">
           <Image
             src="/images/logo.png"
             alt="Himalaya Carbon"
@@ -56,11 +61,19 @@ export const Navbar = () => {
         </Link>
         
         <ul className="flex items-center gap-4 md:gap-8" role="list">
-          <li><NavLink href="/marketplace">Marketplace</NavLink></li>
-          <li><NavLink href="/transparency">Transparency</NavLink></li>
-          <li><NavLink href="/dashboard">Dashboard</NavLink></li>
-          {role === "BUYER" && (
-            <li><NavLink href="/retire">Retire Credits</NavLink></li>
+          {role === "GOVERNMENT_ADMIN" ? (
+             <>
+               <li><NavLink href={`/admin/dashboard${bypassParam}`}>Control Center</NavLink></li>
+               <li><NavLink href={`/marketplace${bypassParam}`}>Marketplace</NavLink></li>
+               <li><NavLink href={`/transparency${bypassParam}`}>Transparency</NavLink></li>
+             </>
+          ) : (
+             <>
+               <li><NavLink href={`/buyer/dashboard${bypassParam}`}>Dashboard</NavLink></li>
+               <li><NavLink href={`/marketplace${bypassParam}`}>Marketplace</NavLink></li>
+               <li><NavLink href={`/transparency${bypassParam}`}>Transparency</NavLink></li>
+               <li><NavLink href={`/retire${bypassParam}`}>Retire Credits</NavLink></li>
+             </>
           )}
         </ul>
         

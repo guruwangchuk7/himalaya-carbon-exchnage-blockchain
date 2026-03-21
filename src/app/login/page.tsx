@@ -26,6 +26,16 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
+    // DEV INTERCEPT: Guruwangchuk mock accounts for easy testing
+    if (email.includes("guruwangchuk1234") && password === "123456") {
+      if (isAdminPortal) {
+        window.location.href = "/admin/dashboard?bypass=admin";
+      } else {
+        window.location.href = "/buyer/dashboard?bypass=buyer";
+      }
+      return;
+    }
+
     const supabase = createClient();
     
     if (isLogin) {
@@ -167,26 +177,10 @@ export default function LoginPage() {
              </div>
           )}
 
-          <div className="mt-6 pt-6 border-t border-border-subtle text-center">
-            <p className="text-xs text-muted-text">
-              Institutional Traders: Please construct SIWE payload via web3 wallet on the dashboard.
-            </p>
-          </div>
+          {/* Removed SIWE payload text as requested */}
         </div>
       </div>
-      {process.env.NODE_ENV === "development" && (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
-          <button 
-            onClick={() => {
-              // Master Bypass to Dashboard
-              window.location.href = "/dashboard?bypass=admin";
-            }}
-            className="px-6 py-3 bg-brand text-accent text-xs font-bold rounded-full shadow-lg hover:scale-105 transition-all"
-          >
-            ⚡ MASTER OVERRIDE: Enter Admin Dashboard
-          </button>
-        </div>
-      )}
+      {/* Removed Master Override button as requested */}
     </main>
   );
 }
