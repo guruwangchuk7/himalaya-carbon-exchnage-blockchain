@@ -19,6 +19,7 @@ model Profile {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   rfqs           RFQ[]
+  balances       UserBalance[]
 }
 
 enum Role {
@@ -44,6 +45,7 @@ model RegistryProject {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   rfqs               RFQ[]
+  balances           UserBalance[]
 }
 
 enum ProjectState {
@@ -104,11 +106,13 @@ model AuditLog {
 }
 
 model UserBalance {
-  id        String   @id @default(cuid())
-  userId    String   // Matches Profile.userId or Supabase userId
-  projectSlug String // Matches RegistryProject.projectId (e.g. BT-FOR-2024-001)
-  amount    Int      @default(0)
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  userId      String   
+  profile     Profile  @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  projectSlug String 
+  project     RegistryProject @relation(fields: [projectSlug], references: [projectId])
+  amount      Int      @default(0)
+  updatedAt   DateTime @updatedAt
 
   @@unique([userId, projectSlug])
 }

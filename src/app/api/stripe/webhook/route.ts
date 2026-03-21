@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session;
         
         // Find the payment record and mark it SUCCEEDED
-        await (prisma as any).payment.update({
+        await prisma.payment.update({
           where: { stripeSessionId: session.id },
           data: {
             status: "SUCCEEDED",
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
         const sessionId = "id" in sessionOrIntent ? (sessionOrIntent as any).id : null;
         
         if (sessionId) {
-          await (prisma as any).payment.update({
+          await prisma.payment.update({
             where: { stripeSessionId: sessionId },
             data: { status: "FAILED" },
           });
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
 
       case "checkout.session.async_payment_failed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        await (prisma as any).payment.update({
+        await prisma.payment.update({
           where: { stripeSessionId: session.id },
           data: { status: "FAILED" },
         });

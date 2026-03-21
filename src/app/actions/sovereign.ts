@@ -47,7 +47,7 @@ export async function updateParticipantAuthorization(address: string, status: bo
     const hash = await walletClient.writeContract(txRequest);
 
     // Sync to local database
-    await (prisma as any).participant.upsert({
+    await prisma.participant.upsert({
       where: { address },
       update: { isAuthorized: status },
       create: { address, isAuthorized: status, name: "Sovereign Added Participant" }
@@ -56,7 +56,7 @@ export async function updateParticipantAuthorization(address: string, status: bo
     // Record Sovereign Security Audit
     await HimalayaSecurity.logAuditAction("PORTAL_WHITELIST_UPDATE", { address, status, hash, admin: user.email });
 
-    revalidatePath("/dashboard/admin");
+    revalidatePath("/admin/dashboard");
 
     return { success: true, hash };
   } catch (error: any) {

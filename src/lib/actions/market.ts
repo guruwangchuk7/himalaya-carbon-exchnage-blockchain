@@ -31,16 +31,14 @@ async function ensureProject(projectIdStr: string) {
 }
 
 async function ensureProfile(userId: string, role: string = "BUYER", organization?: string, email?: string): Promise<any> {
-  const profileTable = (prisma as any).profile;
-  
-  let profile = await profileTable.findUnique({
+  let profile = await prisma.profile.findUnique({
     where: { userId }
   });
 
   
   // AUTO-HEALING: If it's the bypass user and was created with wrong role, fix it
   if (profile && userId === "00000000-0000-0000-0000-admin-bypass" && profile.role !== "GOVERNMENT_ADMIN") {
-      profile = await profileTable.update({
+      profile = await prisma.profile.update({
           where: { userId },
           data: { role: "GOVERNMENT_ADMIN" }
       });
@@ -57,13 +55,13 @@ async function ensureProfile(userId: string, role: string = "BUYER", organizatio
     }
     
     try {
-      profile = await profileTable.create({
+      profile = await prisma.profile.create({
         data: {
           userId,
           email,
           organization: organization || "Institutional Organization",
           isAuthorized: true, 
-          role: assignedRole
+          role: assignedRole as any
         }
       });
       console.log(`✅ MySQL record created for ${userId}`);
@@ -71,13 +69,13 @@ async function ensureProfile(userId: string, role: string = "BUYER", organizatio
       // Auto-Heal: If the email already exists in a mock configuration, bypass the unique constraint by suffixing the email for this new test user
       if (e.code === 'P2002') {
          console.warn(`[AUTH] Collision on email ${email}, auto-healing mock address...`);
-         profile = await profileTable.create({
+         profile = await prisma.profile.create({
             data: {
               userId,
               email: `conflict_${Date.now()}_${email}`,
               organization: organization || "Institutional Organization",
               isAuthorized: true, 
-              role: assignedRole
+              role: assignedRole as any
             }
          });
       } else {
@@ -86,7 +84,7 @@ async function ensureProfile(userId: string, role: string = "BUYER", organizatio
     }
   } else if (email && !profile.email) {
     // Healing: Sync email to existing profile if missing
-    await profileTable.update({
+    await prisma.profile.update({
       where: { userId },
       data: { email }
     });
@@ -269,7 +267,7 @@ export async function initiateAcquisition(projectId: string, volume: number) {
           amount: volume
         }
       }),
-      (prisma as any).auditLog.create({
+      prisma.auditLog.create({
         data: {
           action: "ASSET_ACQUISITION",
           actorEmail: user?.email || "mock@ncrc.bt",
@@ -297,7 +295,7 @@ export async function initiateAcquisition(projectId: string, volume: number) {
 export async function getTransparencyLogs() {
   try {
     const [auditLogs, rfqs] = await Promise.all([
-      (prisma as any).auditLog.findMany({
+      prisma.auditLog.findMany({
         orderBy: { timestamp: "desc" },
         take: 10
       }),
@@ -378,7 +376,7 @@ export async function getReserveStats() {
     // 3. Include Minted Vintages from Sovereigh Audit Logs
     let totalMinted = 0;
     try {
-      const mintedLogs = await (prisma as any).auditLog.findMany({
+      const mintedLogs = await prisma.auditLog.findMany({
         where: { action: "MINT_VINTAGE" }
       });
       totalMinted = mintedLogs.reduce((acc: number, log: any) => {
@@ -517,22 +515,15 @@ export async function getUserBalances() {
 
     const balances = await prisma.userBalance.findMany({
       where: { userId: effectiveUserId },
+      // @ts-expect-error Prisma types may be cached in the IDE
+      include: { project: true } as any,
       orderBy: { updatedAt: 'desc' }
-    });
+    }) as any[];
 
-    // Manually join with project details because of the slug-based relationship
-    const projectIds = balances.map(b => b.projectSlug);
-    const projects = await prisma.registryProject.findMany({
-      where: { projectId: { in: projectIds } }
-    });
-
-    const enrichedBalances = balances.map(b => {
-      const project = projects.find(p => p.projectId === b.projectSlug);
-      return {
-        ...b,
-        projectName: project?.projectName || "Sovereign Carbon Asset"
-      };
-    });
+    const enrichedBalances = balances.map((b) => ({
+      ...b,
+      projectName: b.project?.projectName || "Sovereign Carbon Asset"
+    }));
 
     return { success: true, data: enrichedBalances };
   } catch (error: any) {
@@ -595,7 +586,7 @@ export async function retireCredits(projectId: string, amount: number, beneficia
           cadSyncId: `CAD-${Math.random().toString(36).slice(2, 10)}`
         }
       }),
-      (prisma as any).auditLog.create({
+      prisma.auditLog.create({
         data: {
           action: "ASSET_RETIREMENT",
           actorEmail: user?.email || "mock@ncrc.bt",
