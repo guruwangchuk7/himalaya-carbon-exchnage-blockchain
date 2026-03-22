@@ -515,7 +515,6 @@ export async function getUserBalances() {
 
     const balances = await prisma.userBalance.findMany({
       where: { userId: effectiveUserId },
-      // @ts-expect-error Prisma types may be cached in the IDE
       include: { project: true } as any,
       orderBy: { updatedAt: 'desc' }
     }) as any[];
