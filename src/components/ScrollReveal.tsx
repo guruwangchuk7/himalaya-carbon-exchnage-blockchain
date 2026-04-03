@@ -2,6 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef, ReactNode } from "react";
+import { cn } from "@/app/utils";
 
 interface ScrollRevealProps {
   children: ReactNode;
@@ -10,6 +11,7 @@ interface ScrollRevealProps {
   direction?: "up" | "down" | "left" | "right";
   distance?: number;
   duration?: number;
+  className?: string; // Add this
 }
 
 export const ScrollReveal = ({
@@ -19,6 +21,7 @@ export const ScrollReveal = ({
   direction = "up",
   distance = 40,
   duration = 0.8,
+  className, // Add this
 }: ScrollRevealProps) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
@@ -52,15 +55,20 @@ export const ScrollReveal = ({
   };
 
   return (
-    <div ref={ref} style={{ position: "relative", width, overflow: "hidden" }}>
+    <div 
+      ref={ref} 
+      className={cn("relative", className)}
+      style={{ width, overflow: "hidden" }}
+    >
       <motion.div
         initial={getInitialProps()}
         animate={isInView ? getAnimateProps() : getInitialProps()}
         transition={{
           duration,
           delay,
-          ease: [0.16, 1, 0.3, 1], // Custom cubic-bezier for a premium "Apple-like" feel
+          ease: [0.16, 1, 0.3, 1],
         }}
+        className="h-full"
       >
         {children}
       </motion.div>

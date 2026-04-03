@@ -4,9 +4,6 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "./Button";
 import Image from "next/image";
 import { useRef } from "react";
-import homeImage from "@/assets/images/home.png";
-import { getUserProfile } from "@/lib/actions/market";
-import { useState, useEffect } from "react";
 
 export const Hero = () => {
   const targetRef = useRef<HTMLDivElement>(null);
@@ -15,18 +12,6 @@ export const Hero = () => {
     offset: ["start start", "end start"],
   });
   
-  const [role, setRole] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchRole() {
-      const res = await getUserProfile();
-      if (res.success && res.data) {
-        setRole(String(res.data.role));
-      }
-    }
-    fetchRole();
-  }, []);
-
   const y = useTransform(scrollYProgress, [0, 0.35], [50, 0]);
   const opacity = useTransform(scrollYProgress, [0, 0.18], [0, 1]);
   const scale = useTransform(scrollYProgress, [0, 0.8], [0.88, 1]);
@@ -69,14 +54,14 @@ export const Hero = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button
-              href="/access"
+              href="/"
               className="text-base shadow-soft-float"
               aria-label="Access platform"
             >
-              {role === "GOVERNMENT_ADMIN" ? "National Carbon Registry" : "Access platform"}
+              Access platform
             </Button>
             <Button
-              href="/architecture"
+              href="/"
               variant="secondary"
               className="text-base border border-border-subtle"
               aria-label="Access architecture"
@@ -96,7 +81,7 @@ export const Hero = () => {
         >
           <div className="absolute inset-0 bg-white/20 backdrop-blur-xl -z-10" />
           <Image
-            src={homeImage}
+            src="/JeI7uULY0av9DxD7q7NVLTuoNc.avif"
             alt="Himalaya Carbon platform overview"
             width={1200}
             height={800}
