@@ -24,7 +24,9 @@ if (isPostgres) {
   adapter = new PrismaPg(pool as any)
 } else {
   // Use MariaDB/MySQL adapter for MySQL connections
-  adapter = new PrismaMariaDb(connectionString)
+  // The MariaDB driver requires the 'mariadb://' protocol
+  const mariadbUrl = connectionString.replace('mysql://', 'mariadb://')
+  adapter = new PrismaMariaDb(mariadbUrl)
 }
 
 export const prisma =

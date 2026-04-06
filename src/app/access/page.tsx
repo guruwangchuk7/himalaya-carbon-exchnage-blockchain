@@ -108,18 +108,13 @@ export default function AccessPage() {
                 ))}
               </ul>
               
-              <div className="space-y-4">
-                <Button 
-                  href="/login?role=admin"
-                  variant="secondary"
-                  className="w-full py-5 rounded-2xl flex items-center justify-center gap-3 bg-white text-accent hover:bg-brand hover:text-white border-0 shadow-lg"
-                >
-                  Admin Secure Login <ArrowRight size={18} />
-                </Button>
-                <div className="flex items-center justify-center gap-2 text-[10px] text-white/40 font-bold uppercase tracking-widest">
-                  <Lock size={10} /> Authorized Officials Only
-                </div>
-              </div>
+              <Button 
+                href="/login?role=admin"
+                variant="secondary"
+                className="w-full py-5 rounded-2xl flex items-center justify-center gap-3 bg-white text-accent hover:bg-brand hover:text-white border-0 shadow-lg group/btn hover:shadow-brand/20"
+              >
+                Admin Secure Login <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
+              </Button>
             </div>
           </motion.div>
         </div>
@@ -132,7 +127,7 @@ export default function AccessPage() {
           className="mt-20 text-center"
         >
           <p className="text-xs text-muted-text">
-            Need institutional verification for your organization? <Link href="/transparency" className="text-brand font-bold hover:underline">View Eligibility Guide</Link>
+            Need institutional verification for your organization? <Link href="/eligibility" className="text-brand font-bold hover:underline">View Eligibility Guide</Link>
           </p>
         </motion.div>
       </div>
