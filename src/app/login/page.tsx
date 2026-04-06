@@ -27,7 +27,7 @@ export default function LoginPage() {
     setError(null);
 
     // DEV INTERCEPT: Guruwangchuk mock accounts for easy testing
-    if (email.includes("guruwangchuk1234") && password === "123456") {
+    if (email.includes("guruwangchuk1234@") && password === "123456789") {
       if (isAdminPortal) {
         window.location.href = "/admin/dashboard?bypass=admin";
       } else {

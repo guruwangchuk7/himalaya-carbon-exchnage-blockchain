@@ -11,9 +11,9 @@ export default function AccessPage() {
   return (
     <main className="min-h-screen bg-background flex flex-col pt-32">
       <Navbar />
-      
+
       <div className="container mx-auto px-6 flex-1 flex flex-col justify-center max-w-6xl pb-24">
-        <motion.header 
+        <motion.header
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-16"
@@ -38,17 +38,17 @@ export default function AccessPage() {
           >
             {/* Background Decorative Element */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-linear-to-bl from-brand/5 to-transparent blur-3xl -mr-20 -mt-20 opacity-0 group-hover:opacity-100 transition-opacity" />
-            
+
             <div className="relative z-10 flex flex-col h-full">
               <div className="w-16 h-16 bg-brand-soft rounded-3xl flex items-center justify-center text-brand mb-8 group-hover:scale-110 transition-transform">
                 <Users size={32} />
               </div>
-              
+
               <h2 className="text-3xl font-bold text-foreground mb-4">Carbon Market Buyer</h2>
               <p className="text-muted-text mb-8 leading-relaxed">
                 Experience Bhutan's premium carbon units. Browse the marketplace, acquire authorized credits, and legally retire them for net-zero goals.
               </p>
-              
+
               <ul className="space-y-4 mb-10 flex-1">
                 {[
                   "Access Primary Marketplace",
@@ -62,8 +62,8 @@ export default function AccessPage() {
                   </li>
                 ))}
               </ul>
-              
-              <Button 
+
+              <Button
                 href="/login?role=buyer&signup=true"
                 className="w-full py-5 rounded-2xl flex items-center justify-center gap-3 group/btn shadow-lg hover:shadow-brand/20"
               >
@@ -81,17 +81,17 @@ export default function AccessPage() {
           >
             {/* Background Decorative Element */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-linear-to-bl from-brand/20 to-transparent blur-3xl -mr-20 -mt-20 opacity-0 group-hover:opacity-100 transition-opacity" />
-            
+
             <div className="relative z-10 flex flex-col h-full text-white">
               <div className="w-16 h-16 bg-white/10 rounded-3xl flex items-center justify-center text-brand mb-8 group-hover:scale-110 transition-transform border border-white/5">
                 <ShieldAlert size={32} />
               </div>
-              
+
               <h2 className="text-3xl font-bold mb-4">Government Admin</h2>
               <p className="text-white/60 mb-8 leading-relaxed">
                 Exclusive portal for National Carbon Registry officials. Manage sovereign issuance, authorize Article 6.2 bilateral transfers, and monitor platform health.
               </p>
-              
+
               <ul className="space-y-4 mb-10 flex-1">
                 {[
                   "Issue National Carbon Units",
@@ -107,8 +107,8 @@ export default function AccessPage() {
                   </li>
                 ))}
               </ul>
-              
-              <Button 
+
+              <Button
                 href="/login?role=admin"
                 variant="secondary"
                 className="w-full py-5 rounded-2xl flex items-center justify-center gap-3 bg-white text-accent hover:bg-brand hover:text-white border-0 shadow-lg group/btn hover:shadow-brand/20"
@@ -120,7 +120,7 @@ export default function AccessPage() {
         </div>
 
         {/* Support Section */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}

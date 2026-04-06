@@ -426,7 +426,7 @@ export async function getUserProfile(bypassRole?: string) {
       console.log("🛠️ BYPASS TRIGGERED: Buyer Mode");
       effectiveUserId = "00000000-0000-0000-0000-buyer-bypass";
       effectiveRole = "BUYER";
-      effectiveEmail = "buyer@himalaya.bt";
+      effectiveEmail = "guruwangchuk1234@gmail.com";
     } else if (process.env.NODE_ENV === 'development' && !effectiveUserId) {
         effectiveUserId = "00000000-0000-0000-0000-000000000000";
     }

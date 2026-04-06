@@ -54,14 +54,14 @@ export const Hero = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button
-              href="/"
+              href="/access"
               className="text-base shadow-soft-float"
-              aria-label="Access platform"
+              aria-label="Access registry"
             >
-              Access platform
+              Access registry
             </Button>
             <Button
-              href="/"
+              href="/architecture"
               variant="secondary"
               className="text-base border border-border-subtle"
               aria-label="Access architecture"

@@ -36,10 +36,10 @@ export const Footer = () => (
           <section aria-label="Resource links">
             <h4 className="font-bold mb-8 uppercase text-xs tracking-widest text-gray-400">Resources</h4>
             <ul className="space-y-4 text-gray-300 font-light">
-              <li><a href="/docs/prd.pdf" target="_blank" className="hover:text-white transition-colors">PRD brief</a></li>
-              <li><a href="/docs/resportcarbon.pdf" target="_blank" className="hover:text-white transition-colors">Carbon report</a></li>
-              <li><a href="/docs/techstack.pdf" target="_blank" className="hover:text-white transition-colors">Tech stack</a></li>
-              <li><a href="/docs/todo.md" className="hover:text-white transition-colors">Implementation status</a></li>
+              <li><a href="/resources/prd" className="hover:text-white transition-colors">PRD brief</a></li>
+              <li><a href="/resources/carbon-report" className="hover:text-white transition-colors">Carbon report</a></li>
+              <li><a href="/architecture" className="hover:text-white transition-colors">Tech stack</a></li>
+              <li><a href="/resources/implementation" className="hover:text-white transition-colors">Implementation status</a></li>
             </ul>
           </section>
         </ScrollReveal>
@@ -78,9 +78,9 @@ export const Footer = () => (
         <div className="pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6 text-gray-400 text-sm font-light">
           <p>(c) 2026 Himalaya Carbon Exchange. All rights reserved.</p>
           <div className="flex gap-10">
-            <a href="#" className="hover:text-white transition-colors" onClick={(e) => { e.preventDefault(); alert("Privacy Policy coming soon."); }}>Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors" onClick={(e) => { e.preventDefault(); alert("Terms of Service coming soon."); }}>Terms of Service</a>
-            <a href="#" className="hover:text-white transition-colors" onClick={(e) => { e.preventDefault(); alert("Security documentation is available in the Tech Stack PDF."); }}>Security</a>
+            <a href="/legal/privacy" className="hover:text-white transition-colors">Privacy Policy</a>
+            <a href="/legal/terms" className="hover:text-white transition-colors">Terms of Service</a>
+            <a href="/legal/security" className="hover:text-white transition-colors">Security</a>
           </div>
         </div>
       </ScrollReveal>

@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Search, Filter, ArrowUpDown, Shield, Info, ExternalLink, BarChart3, MessageSquare, Zap, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/Button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const projectPools = [
@@ -261,14 +261,14 @@ export function MarketplaceClient({ initialProjects }: { initialProjects: any[] 
   const [role, setRole] = useState<string | null>(null);
   const [toast, setToast] = useState<{message: string, isVisible: boolean, type?: 'info' | 'error'}>({ message: "", isVisible: false });
 
-  useState(() => {
+  useEffect(() => {
     const fetchRole = async () => {
        const { getUserProfile } = await import("@/lib/actions/market");
        const res = await getUserProfile();
        if (res.success && res.data) setRole(String(res.data.role));
     }
     fetchRole();
-  });
+  }, []);
 
   const showToast = (msg: string, type: 'info' | 'error' = 'info') => {
     setToast({ message: msg, isVisible: true, type });
